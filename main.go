@@ -5,8 +5,6 @@ import (
 	_ "net/http/pprof"
 	"videortc/rtc"
 	"videortc/ws"
-
-	"videortc/util"
 )
 
 func main() {
@@ -18,12 +16,22 @@ func main() {
 	manager := rtc.NewPeerManager()
 
 	var init = func(msg *ws.InitEvent) error {
-		util.Log.Print(msg)
+		// 我上线后别人会主动链接我,我只需要预先为这些peer创建资源,等待MsgEvent发来的offer
+		for _, id := range msg.IDS {
+			_, err := manager.Ensure(id)
+			if err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 	var online = func(msg *ws.OnlineEvent) error {
-		_, err := manager.Ensure(msg.ID)
-		return err
+		// 别人上线后,需要我主动链接他
+		peer, err := manager.Ensure(msg.ID)
+		if err != nil {
+			return err
+		}
+		return peer.Connect(msg.ID)
 	}
 	var umsg = func(msg *ws.MsgEvent) error {
 		return manager.Dispatch(msg)

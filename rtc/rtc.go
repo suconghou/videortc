@@ -17,6 +17,11 @@ var (
 			{
 				URLs: []string{"stun:119.29.1.39:3478"},
 			},
+			{
+				URLs:       []string{"turn:119.29.1.39:3478"},
+				Username:   "su",
+				Credential: "su",
+			},
 		},
 	}
 )
@@ -25,6 +30,7 @@ var (
 type Peer struct {
 	ws   *ws.Peer
 	conn *webrtc.PeerConnection
+	dc   *webrtc.DataChannel
 }
 
 // PeerManager manage every user peer
@@ -67,7 +73,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, error) {
 	return peer, nil
 }
 
-// Dispatch message to peer
+// Dispatch message to peer ,此函数不能阻塞太久, Accept 可能耗时5s
 func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 	if msg.Event == "offer" {
 		// someone send me offer , we should accept that
@@ -92,6 +98,16 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 			SDPMLineIndex: &sdpMLineIndex,
 		}
 		return peer.conn.AddICECandidate(candidate)
+	} else if msg.Event == "answer" {
+		peer, err := m.Ensure(msg.From)
+		if err != nil {
+			return err
+		}
+		var desc = webrtc.SessionDescription{
+			Type: webrtc.SDPTypeAnswer,
+			SDP:  msg.Data.Get("sdp").String(),
+		}
+		return peer.conn.SetRemoteDescription(desc)
 	} else {
 		util.Log.Print(msg)
 	}
@@ -110,33 +126,12 @@ func NewPeer(sharedWs *ws.Peer) (*Peer, error) {
 		util.Log.Printf("ICE Connection State has changed: %s\n", connectionState.String())
 	})
 	// Register data channel creation handling
-	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
-		fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
-
-		// Register channel opening handling
-		d.OnOpen(func() {
-			fmt.Printf("Data channel '%s'-'%d' open. Random messages will now be sent to any connected DataChannels every 5 seconds\n", d.Label(), d.ID())
-
-			for range time.NewTicker(5 * time.Second).C {
-				message := `{"event":"test","ids":[]}`
-				fmt.Printf("Sending '%s'\n", message)
-				// Send the message as text
-				sendErr := d.SendText(message)
-				if sendErr != nil {
-					panic(sendErr)
-				}
-			}
-		})
-
-		// Register text message handling
-		d.OnMessage(func(msg webrtc.DataChannelMessage) {
-			fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(msg.Data))
-		})
-	})
+	peerConnection.OnDataChannel(initDc)
 
 	return &Peer{
 		sharedWs,
 		peerConnection,
+		nil,
 	}, nil
 
 }
@@ -182,12 +177,6 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		return err
 	}
 
-	// Block until ICE Gathering is complete, disabling trickle ICE
-	// we do this because we only can exchange one signaling message
-	// in a production application you should exchange ICE Candidates via OnICECandidate
-	<-gatherComplete
-
-	// Output the answer in base64 so we can paste it in browser
 	r := p.conn.LocalDescription()
 	var data = map[string]interface{}{
 		"event": "answer",
@@ -196,5 +185,83 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		"data":  r,
 	}
 	p.ws.Send(data)
+
+	// Block until ICE Gathering is complete, disabling trickle ICE
+	// we do this because we only can exchange one signaling message
+	// in a production application you should exchange ICE Candidates via OnICECandidate
+	<-gatherComplete
 	return nil
+}
+
+// Connect 主动链接别人
+func (p *Peer) Connect(id string) error {
+	var fn = func() error {
+		offer, err := p.conn.CreateOffer(nil)
+		if err != nil {
+			return err
+		}
+		var data = map[string]interface{}{
+			"event": "offer",
+			"from":  p.ws.ID,
+			"to":    id,
+			"data":  offer,
+		}
+		p.ws.Send(data)
+		p.conn.OnICECandidate(func(candidate *webrtc.ICECandidate) {
+			if candidate == nil {
+				return
+			}
+			var data = map[string]interface{}{
+				"event": "candidate",
+				"from":  p.ws.ID,
+				"to":    id,
+				"data":  candidate.ToJSON(),
+			}
+			p.ws.Send(data)
+		})
+		gatherComplete := webrtc.GatheringCompletePromise(p.conn)
+		err = p.conn.SetLocalDescription(offer)
+		if err != nil {
+			return err
+		}
+		<-gatherComplete
+		return nil
+	}
+	p.conn.OnNegotiationNeeded(func() {
+		if err := fn(); err != nil {
+			util.Log.Print(err)
+		}
+	})
+	dc, err := p.conn.CreateDataChannel("dc", nil)
+	if err != nil {
+		return err
+	}
+	initDc(dc)
+	p.dc = dc
+	return nil
+}
+
+func initDc(d *webrtc.DataChannel) {
+	fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
+
+	// Register channel opening handling
+	d.OnOpen(func() {
+		fmt.Printf("Data channel '%s'-'%d' open. Random messages will now be sent to any connected DataChannels every 5 seconds\n", d.Label(), d.ID())
+
+		for range time.NewTicker(5 * time.Second).C {
+			message := `{"event":"test","ids":[]}`
+			fmt.Printf("Sending '%s'\n", message)
+			// Send the message as text
+			sendErr := d.SendText(message)
+			if sendErr != nil {
+				panic(sendErr)
+			}
+		}
+	})
+
+	// Register text message handling
+	d.OnMessage(func(msg webrtc.DataChannelMessage) {
+		fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(msg.Data))
+	})
+
 }

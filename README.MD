@@ -12,3 +12,30 @@ ws的任务是传输信令,和节点发现.
 
 
 ws.Loop 开始建立链接,监听消息
+
+
+收到 offer 
+
+收到 candidate
+
+回复 answer
+
+回复 candidate
+
+
+
+====
+
+
+收到 offer
+
+回复 answer
+
+收到 candidate
+
+收到 candidate
+
+
+主动连接端 
+
+createDataChannel 
