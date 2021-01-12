@@ -39,3 +39,53 @@ ws.Loop 开始建立链接,监听消息
 主动连接端 
 
 createDataChannel 
+
+
+
+消息
+
+ping
+
+pong
+
+对方发送 query
+
+我们回复found
+
+resolve
+
+quit
+
+
+message.buffer
+
+buffer.recv
+
+buffer
+
+等, 
+我们作为一个P2P节点,不向别人索要资源,只提供资源,只需要实现
+
+监听 ping 回复 pong
+监听到 pong 无需处理
+监听到 query 回复 found
+监听到 resolve 回复二进制内容消息
+
+回复二进制内容消息为分片数据,50kb一分片
+须由队列执行 发送 buffer.recv,算上头部30字节 共计 50KB + 30字节
+头部格式为 `["id",i,n]`
+
+i 为当前分片的需要,从0开始
+n 为总分片数量
+id 为形式 `vid:itag|index`
+
+> vid 是video id
+>
+> itag 即为video 的itag
+>
+> index 为资源媒体sidx或cues的媒体分片
+
+
+
+监听到 quit 则停止队列发送
+

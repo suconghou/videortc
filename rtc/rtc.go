@@ -9,6 +9,7 @@ import (
 	"videortc/ws"
 
 	"github.com/pion/webrtc/v3"
+	"github.com/tidwall/gjson"
 )
 
 var (
@@ -241,6 +242,20 @@ func (p *Peer) Connect(id string) error {
 	return nil
 }
 
+// Close 关闭peerConection,和dataChannel,但是不影响共享的ws
+func (p *Peer) Close() error {
+	var err1 error
+	var err2 error
+	err1 = p.conn.Close()
+	if p.dc != nil {
+		err2 = p.dc.Close()
+	}
+	if err1 != nil {
+		return err1
+	}
+	return err2
+}
+
 func initDc(d *webrtc.DataChannel) {
 	fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
 
@@ -254,14 +269,53 @@ func initDc(d *webrtc.DataChannel) {
 			// Send the message as text
 			sendErr := d.SendText(message)
 			if sendErr != nil {
-				panic(sendErr)
+				util.Log.Print(sendErr)
 			}
 		}
 	})
 
 	// Register text message handling
 	d.OnMessage(func(msg webrtc.DataChannelMessage) {
+		if msg.IsString {
+			g := gjson.ParseBytes(msg.Data)
+			ev := g.Get("event").String()
+			if ev == "query" {
+				dcQueryMsg <- &queryEvent{
+					vinfo: vinfo{
+						Index: g.Get("data.index").Uint(),
+						ID:    g.Get("data.id").String(),
+					},
+					dc: d,
+				}
+				return
+			} else if ev == "resolve" {
+				dcResolveMsg <- &resolveEvent{
+					vinfo: vinfo{
+						Index: g.Get("data.index").Uint(),
+						ID:    g.Get("data.id").String(),
+					},
+					dc: d,
+				}
+				return
+			} else if ev == "ping" {
+				dcPingMsg <- &pingPongEvent{
+					Event: ev,
+					dc:    d,
+				}
+				return
+			} else if ev == "quit" {
+				dcQuitMsg <- &quitEvent{
+					vinfo: vinfo{
+						Index: g.Get("data.index").Uint(),
+						ID:    g.Get("data.id").String(),
+					},
+					dc: d,
+				}
+				return
+			}
+		}
 		fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(msg.Data))
+
 	})
 
 }
