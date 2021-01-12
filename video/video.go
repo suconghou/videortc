@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"videortc/request"
 
 	"github.com/pion/webrtc/v3"
 
@@ -36,34 +37,53 @@ func NewMediaHub() *MediaHub {
 	}
 }
 
-// Ok test if this resource ok, TODO with cache
-func (m *MediaHub) Ok(id string) bool {
-	var arr = strings.Split(id, ":")
-	if len(arr) != 2 {
+func itemValid(item *youtubevideoparser.StreamItem) bool {
+	if item == nil {
 		return false
 	}
-	var vid = arr[0]
-	var itag = arr[1]
-	info, err := m.get(vid)
-	if err != nil {
+	if item.InitRange == nil || item.IndexRange == nil || item.ContentLength == "" {
 		return false
 	}
-	if item, ok := info.Streams[itag]; ok {
-		if item.InitRange == nil || item.IndexRange == nil || item.ContentLength == "" {
-			return false
-		}
-		m.lock.Lock()
-		m.videos[vid] = &videoItem{
-			info,
-			time.Now(),
-		}
-		m.lock.Unlock()
-		return true
-	}
-	return false
+	return true
 }
 
-func (m *MediaHub) get(id string) (*youtubevideoparser.VideoInfo, error) {
+// Ok test if this resource ok, TODO with cache
+func (m *MediaHub) Ok(id string) bool {
+	item := m.getItemInfo(id)
+	return itemValid(item)
+}
+
+func (m *MediaHub) getItemInfo(id string) *youtubevideoparser.StreamItem {
+	var arr = strings.Split(id, ":")
+	if len(arr) != 2 {
+		return nil
+	}
+	var (
+		vid  = arr[0]
+		itag = arr[1]
+		info *videoItem
+		now  = time.Now()
+	)
+	m.lock.RLock()
+	info = m.videos[id]
+	m.lock.RUnlock()
+	if info == nil || now.Sub(info.time) > time.Hour {
+		vinfo, err := getInfo(vid)
+		if err != nil {
+			return nil
+		}
+		info = &videoItem{
+			vinfo,
+			now,
+		}
+		m.lock.Lock()
+		m.videos[id] = info
+		m.lock.Unlock()
+	}
+	return info.Streams[itag]
+}
+
+func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
 	parser, err := youtubevideoparser.NewParser(id, videoClient)
 	if err != nil {
 		return nil, err
@@ -73,10 +93,19 @@ func (m *MediaHub) get(id string) (*youtubevideoparser.VideoInfo, error) {
 
 // Response create send task that send data to dc
 func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) error {
-	return nil
+	item := m.getItemInfo(id)
+	if !itemValid(item) {
+		return nil
+	}
+	itemMediaMap := request.Parse(item)
+	return itemMediaMap
 }
 
 // QuitResponse cancel that send task
 func (m *MediaHub) QuitResponse(id string, index uint64) error {
 	return nil
+}
+
+func (m *MediaHub) getMediaMap() {
+
 }

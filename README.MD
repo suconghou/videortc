@@ -89,3 +89,9 @@ id 为形式 `vid:itag|index`
 
 监听到 quit 则停止队列发送
 
+TODO 
+
+task queue
+
+ebml
+sidx parser
