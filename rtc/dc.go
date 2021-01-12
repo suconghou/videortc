@@ -2,6 +2,7 @@ package rtc
 
 import (
 	"encoding/json"
+	"time"
 	"videortc/util"
 	"videortc/video"
 
@@ -13,6 +14,7 @@ var (
 	dcResolveMsg = make(chan *resolveEvent)
 	dcPingMsg    = make(chan *pingPongEvent)
 	dcQuitMsg    = make(chan *quitEvent)
+	worker       = make(chan func() error)
 	vHub         = video.NewMediaHub()
 )
 
@@ -46,41 +48,74 @@ type pingPongEvent struct {
 
 func init() {
 	go waitMsg()
+	go workerLoop()
 }
 
 func waitMsg() {
 	for {
 		select {
 		case data := <-dcQueryMsg:
-			if !vHub.Ok(data.ID) {
-				return
+			fn := func() error {
+				if !vHub.Ok(data.ID) {
+					return nil
+				}
+				var v = &foundEvent{
+					Event: "found",
+					Data: vinfo{
+						Index: data.Index,
+						ID:    data.ID,
+					},
+				}
+				return sendFound(data.dc, v)
 			}
-			var v = &foundEvent{
-				Event: "found",
-				Data: vinfo{
-					Index: data.Index,
-					ID:    data.ID,
-				},
-			}
-			if err := sendFound(data.dc, v); err != nil {
-				util.Log.Print(err)
+			select {
+			case worker <- fn:
+			case <-time.After(time.Second):
+				go runIt(fn)
 			}
 
 		case data := <-dcResolveMsg:
-			util.Log.Print(data)
-			if err := vHub.Response(data.dc, data.ID, data.Index); err != nil {
-				util.Log.Print(err)
+			fn := func() error {
+				return vHub.Response(data.dc, data.ID, data.Index)
 			}
+			select {
+			case worker <- fn:
+			case <-time.After(time.Second):
+				go runIt(fn)
+			}
+
 		case data := <-dcPingMsg:
-			if err := sendPong(data.dc); err != nil {
-				util.Log.Print(err)
+			fn := func() error {
+				return sendPong(data.dc)
+			}
+			select {
+			case worker <- fn:
+			case <-time.After(time.Second):
+				go runIt(fn)
 			}
 		case data := <-dcQuitMsg:
-			util.Log.Print(data)
-			if err := vHub.QuitResponse(data.ID, data.Index); err != nil {
-				util.Log.Print(err)
+			fn := func() error {
+				return vHub.QuitResponse(data.ID, data.Index)
 			}
+			select {
+			case worker <- fn:
+			case <-time.After(time.Second):
+				go runIt(fn)
+			}
+
 		}
+	}
+}
+
+func workerLoop() {
+	for fn := range worker {
+		runIt(fn)
+	}
+}
+
+func runIt(fn func() error) {
+	if err := fn(); err != nil {
+		util.Log.Print(err)
 	}
 }
 

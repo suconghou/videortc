@@ -11,6 +11,8 @@ import (
 	"github.com/suconghou/youtubevideoparser"
 )
 
+const chunk = 51200
+
 var (
 	videoClient = util.MakeClient("VIDEO_PROXY", time.Minute)
 )

@@ -3,7 +3,6 @@ package rtc
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"videortc/util"
 	"videortc/ws"
@@ -121,20 +120,26 @@ func NewPeer(sharedWs *ws.Peer) (*Peer, error) {
 	if err != nil {
 		return nil, err
 	}
+	var peer = &Peer{
+		sharedWs,
+		peerConnection,
+		nil,
+	}
 	// Set the handler for ICE connection state
 	// This will notify you when the peer has connected/disconnected
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		util.Log.Printf("ICE Connection State has changed: %s\n", connectionState.String())
 	})
 	// Register data channel creation handling
-	peerConnection.OnDataChannel(initDc)
+	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+		if peer.dc != nil {
+			peer.dc.Close()
+		}
+		initDc(d)
+		peer.dc = d
+	})
 
-	return &Peer{
-		sharedWs,
-		peerConnection,
-		nil,
-	}, nil
-
+	return peer, nil
 }
 
 // Accept for some peer send me offer to connect me
@@ -237,6 +242,9 @@ func (p *Peer) Connect(id string) error {
 	if err != nil {
 		return err
 	}
+	if p.dc != nil {
+		p.dc.Close()
+	}
 	initDc(dc)
 	p.dc = dc
 	return nil
@@ -257,21 +265,19 @@ func (p *Peer) Close() error {
 }
 
 func initDc(d *webrtc.DataChannel) {
-	fmt.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
+	util.Log.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
 
 	// Register channel opening handling
 	d.OnOpen(func() {
-		fmt.Printf("Data channel '%s'-'%d' open. Random messages will now be sent to any connected DataChannels every 5 seconds\n", d.Label(), d.ID())
+		util.Log.Printf("Data channel '%s'-'%d' open. \n", d.Label(), d.ID())
+	})
 
-		for range time.NewTicker(5 * time.Second).C {
-			message := `{"event":"test","ids":[]}`
-			fmt.Printf("Sending '%s'\n", message)
-			// Send the message as text
-			sendErr := d.SendText(message)
-			if sendErr != nil {
-				util.Log.Print(sendErr)
-			}
-		}
+	d.OnClose(func() {
+		util.Log.Printf("Data channel '%s'-'%d' closed. \n", d.Label(), d.ID())
+	})
+
+	d.OnError(func(err error) {
+		util.Log.Printf("Data channel '%s'-'%d' error %s. \n", d.Label(), d.ID(), err)
 	})
 
 	// Register text message handling
@@ -312,9 +318,11 @@ func initDc(d *webrtc.DataChannel) {
 					dc: d,
 				}
 				return
+			} else if ev == "pong" {
+				return
 			}
 		}
-		fmt.Printf("Message from DataChannel '%s': '%s'\n", d.Label(), string(msg.Data))
+		fmt.Printf("Message from DataChannel '%s'-'%d': '%s'\n", d.Label(), d.ID(), string(msg.Data))
 
 	})
 
