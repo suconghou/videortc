@@ -76,7 +76,6 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 			return err
 		}
 		var sdp = msg.Data.Get("sdp").String()
-		util.Log.Print(sdp, msg)
 		return peer.Accept(webrtc.SDPTypeOffer, sdp, msg)
 	} else if msg.Event == "candidate" {
 		peer, err := m.Ensure(msg.From)
@@ -92,8 +91,9 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 			SDPMid:        &sdpMid,
 			SDPMLineIndex: &sdpMLineIndex,
 		}
-		aa := peer.conn.AddICECandidate(candidate)
-		util.Log.Print(aa, "========")
+		return peer.conn.AddICECandidate(candidate)
+	} else {
+		util.Log.Print(msg)
 	}
 	return nil
 }
@@ -143,24 +143,19 @@ func NewPeer(sharedWs *ws.Peer) (*Peer, error) {
 
 // Accept for some peer send me offer to connect me
 func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) error {
-
 	p.conn.OnICECandidate(func(candidate *webrtc.ICECandidate) {
 		if candidate == nil {
 			return
 		}
-		var c = candidate.ToJSON()
-		var z = "0"
-		c.SDPMid = &z
 		var data = map[string]interface{}{
 			"event": "candidate",
 			"from":  p.ws.ID,
 			"to":    msg.From,
-			"data":  c,
+			"data":  candidate.ToJSON(),
 		}
 		p.ws.Send(data)
 	})
 
-	// Wait for the offer to be pasted
 	offer := webrtc.SessionDescription{
 		Type: sdpType,
 		SDP:  sdp,
@@ -178,7 +173,6 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		return err
 	}
 
-	util.Log.Print("myanswer", answer)
 	// Create channel that is blocked until ICE Gathering is complete
 	gatherComplete := webrtc.GatheringCompletePromise(p.conn)
 
@@ -195,7 +189,6 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 
 	// Output the answer in base64 so we can paste it in browser
 	r := p.conn.LocalDescription()
-	util.Log.Print("LocalDescription", r)
 	var data = map[string]interface{}{
 		"event": "answer",
 		"from":  p.ws.ID,
@@ -203,6 +196,5 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		"data":  r,
 	}
 	p.ws.Send(data)
-	// Block forever
-	select {}
+	return nil
 }

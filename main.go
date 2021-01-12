@@ -22,13 +22,10 @@ func main() {
 		return nil
 	}
 	var online = func(msg *ws.OnlineEvent) error {
-		util.Log.Print(msg)
 		_, err := manager.Ensure(msg.ID)
-		util.Log.Print("ensure", err)
 		return err
 	}
 	var umsg = func(msg *ws.MsgEvent) error {
-		util.Log.Print(msg)
 		return manager.Dispatch(msg)
 	}
 	signal := &ws.Peer{

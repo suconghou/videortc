@@ -48,28 +48,16 @@ func (p *Peer) Loop() {
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
 	p.send = make(chan interface{})
-	go p.connLoop()
-	for {
-		select {
-		case data := <-p.initMsg:
-			go func() {
-				if err := p.OnInit(data); err != nil {
-					util.Log.Print(err)
-				}
-			}()
-		case data := <-p.onlineMsg:
-			go func() {
-				if err := p.OnUserOnline(data); err != nil {
-					util.Log.Print(err)
-				}
-			}()
-		case data := <-p.userMsg:
-			go func() {
-				if err := p.OnUserMsg(data); err != nil {
-					util.Log.Print(err)
-				}
-			}()
-		case data := <-p.send:
+	var worker = make(chan func() error)
+	go func() {
+		for fn := range worker {
+			if err := fn(); err != nil {
+				util.Log.Print(err)
+			}
+		}
+	}()
+	go func() {
+		for data := range p.send {
 			err := p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
 			if err != nil {
 				util.Log.Print(err)
@@ -81,6 +69,23 @@ func (p *Peer) Loop() {
 			err = p.conn.SetWriteDeadline(time.Now().Add(time.Hour))
 			if err != nil {
 				util.Log.Print(err)
+			}
+		}
+	}()
+	go p.connLoop()
+	for {
+		select {
+		case data := <-p.initMsg:
+			worker <- func() error {
+				return p.OnInit(data)
+			}
+		case data := <-p.onlineMsg:
+			worker <- func() error {
+				return p.OnUserOnline(data)
+			}
+		case data := <-p.userMsg:
+			worker <- func() error {
+				return p.OnUserMsg(data)
 			}
 		}
 	}
@@ -136,26 +141,15 @@ func (p *Peer) wsMsgLoop() error {
 			})
 			p.initMsg <- &InitEvent{ids}
 		} else if ev != "" {
-
 			from := g.Get("from").String()
 			to := g.Get("to").String()
-
 			if from != "" && to != "" {
-				select {
-
-				case p.userMsg <- &MsgEvent{
+				p.userMsg <- &MsgEvent{
 					From:  from,
 					To:    to,
 					Event: ev,
 					Data:  g.Get("data"),
-				}:
-					util.Log.Println("ok")
-
-				case <-time.After(time.Second):
-					util.Log.Println("timeout")
-
 				}
-
 			}
 		} else {
 			util.Log.Print(string(data))
