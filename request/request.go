@@ -1,9 +1,11 @@
 package request
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/suconghou/mediaindex"
 	"github.com/suconghou/videoproxy/util"
 
 	"github.com/suconghou/youtubevideoparser"
@@ -24,13 +26,23 @@ func Parse(item *youtubevideoparser.StreamItem) error {
 	if strings.Contains(item.Type, "mp4") {
 		return parseMp4(bs)
 	}
-	return parseWebm(bs)
+	var indexEndOffset uint64
+	var totalSize uint64
+	indexEndOffset, err = strconv.ParseUint(item.IndexRange.End, 10, 64)
+	if err != nil {
+		return err
+	}
+	totalSize, err = strconv.ParseUint(item.ContentLength, 10, 64)
+	if err != nil {
+		return err
+	}
+	return parseWebm(bs, indexEndOffset, totalSize)
 }
 
 func parseMp4(bs []byte) error {
-	return nil
+	mediaindex.ParseMp4(bs)
 }
 
-func parseWebm([]byte) error {
-	return nil
+func parseWebm(bs []byte, indexEndOffset uint64, totalSize uint64) error {
+	mediaindex.ParseWebm(bs)
 }
