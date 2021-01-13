@@ -1,8 +1,10 @@
 package request
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/suconghou/mediaindex"
@@ -13,36 +15,88 @@ import (
 )
 
 var (
-	client = util.MakeClient("VIDEO_PROXY", time.Minute)
+	client          = util.MakeClient("VIDEO_PROXY", time.Minute)
+	mediaIndexCache sync.Map
 )
 
+func cacheGet(key string) map[int][2]uint64 {
+	v, ok := mediaIndexCache.Load(key)
+	if ok {
+		val, ok := v.(map[int][2]uint64)
+		if ok {
+			return val
+		}
+	}
+	return nil
+}
+
+func cacheSet(key string, val map[int][2]uint64) {
+	mediaIndexCache.Store(key, val)
+}
+
+// GetIndex with cache
+func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) ([]byte, error) {
+	var key = fmt.Sprintf("%s:%s", vid, item.Itag)
+	ranges := cacheGet(key)
+	if ranges == nil {
+		var err error
+		ranges, err = Parse(vid, item)
+		if err != nil {
+			return nil, err
+		}
+		cacheSet(key, ranges)
+	}
+	info := ranges[index]
+	if info[1] == 0 {
+		return nil, fmt.Errorf("%s:%s error get %d index range", vid, item.Itag, index)
+	}
+	return getData(vid, item.Itag, int(info[0]), int(info[1]), item)
+}
+
 // Parse item media
-func Parse(item *youtubevideoparser.StreamItem) error {
-	var url = item.URL + "&range=" + item.IndexRange.Start + "-" + item.IndexRange.End
-	bs, err := request.GetURLData(url, true, client)
+func Parse(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uint64, error) {
+	start, err := strconv.Atoi(item.IndexRange.Start)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	end, err := strconv.Atoi(item.IndexRange.End)
+	if err != nil {
+		return nil, err
+	}
+	bs, err := getData(vid, item.Itag, start, end, item)
+	if err != nil {
+		return nil, err
 	}
 	if strings.Contains(item.Type, "mp4") {
-		return parseMp4(bs)
+		return mediaindex.ParseMp4(bs), nil
 	}
 	var indexEndOffset uint64
 	var totalSize uint64
 	indexEndOffset, err = strconv.ParseUint(item.IndexRange.End, 10, 64)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	totalSize, err = strconv.ParseUint(item.ContentLength, 10, 64)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return parseWebm(bs, indexEndOffset, totalSize)
+	return mediaindex.ParseWebM(bs, indexEndOffset, totalSize), nil
 }
 
-func parseMp4(bs []byte) error {
-	mediaindex.ParseMp4(bs)
+// getData do http request and got vid itag data
+func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) ([]byte, error) {
+	if item == nil {
+		return getByUpstream(vid, itag, start, end)
+	}
+	return getByOrigin(item, start, end)
 }
 
-func parseWebm(bs []byte, indexEndOffset uint64, totalSize uint64) error {
-	mediaindex.ParseWebm(bs)
+func getByUpstream(vid string, itag string, start int, end int) ([]byte, error) {
+	var url = fmt.Sprintf("http://share.suconghou.cn/video/%s/%s/%d-%d.ts", vid, itag, start, end)
+	return request.GetURLData(url, true, client)
+}
+
+func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) ([]byte, error) {
+	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end)
+	return request.GetURLData(url, true, client)
 }

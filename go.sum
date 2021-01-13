@@ -77,6 +77,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/suconghou/mediaindex v0.0.0-20210113093833-fedfadcfed6c h1:EteT/69PKuny0eiEZixOHGsIxqbr2/YDaTyAsArVul8=
+github.com/suconghou/mediaindex v0.0.0-20210113093833-fedfadcfed6c/go.mod h1:0ycm1zy6IQk/PqTfykK/N1+R+qk6XU0j8oC1Oz2Rqfk=
 github.com/suconghou/videoproxy v0.0.0-20201109144010-c7e777dc9644 h1:mazTg+t2+Vbfd3iOEd+aF9gX0akQX6QG+MUNLXGvBrk=
 github.com/suconghou/videoproxy v0.0.0-20201109144010-c7e777dc9644/go.mod h1:FTvJ6T0yVqHt+cCS6IM9YloYfNCVGGK2iKR5HD4y64M=
 github.com/suconghou/youtubevideoparser v0.0.0-20210109132017-2dc0e25118c1 h1:H+k1vEWw5YA78bEDclQkk/oNbwwBQx6OWrH3AgPSNUw=

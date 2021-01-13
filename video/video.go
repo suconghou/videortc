@@ -1,6 +1,7 @@
 package video
 
 import (
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -41,7 +42,7 @@ func itemValid(item *youtubevideoparser.StreamItem) bool {
 	if item == nil {
 		return false
 	}
-	if item.InitRange == nil || item.IndexRange == nil || item.ContentLength == "" {
+	if item.InitRange == nil || item.IndexRange == nil || item.ContentLength == "" || item.IndexRange.End == "" {
 		return false
 	}
 	return true
@@ -54,9 +55,14 @@ func (m *MediaHub) Ok(id string) bool {
 }
 
 func (m *MediaHub) getItemInfo(id string) *youtubevideoparser.StreamItem {
+	_, item := m.getVideoInfo(id)
+	return item
+}
+
+func (m *MediaHub) getVideoInfo(id string) (*videoItem, *youtubevideoparser.StreamItem) {
 	var arr = strings.Split(id, ":")
 	if len(arr) != 2 {
-		return nil
+		return nil, nil
 	}
 	var (
 		vid  = arr[0]
@@ -70,7 +76,7 @@ func (m *MediaHub) getItemInfo(id string) *youtubevideoparser.StreamItem {
 	if info == nil || now.Sub(info.time) > time.Hour {
 		vinfo, err := getInfo(vid)
 		if err != nil {
-			return nil
+			return nil, nil
 		}
 		info = &videoItem{
 			vinfo,
@@ -80,7 +86,7 @@ func (m *MediaHub) getItemInfo(id string) *youtubevideoparser.StreamItem {
 		m.videos[id] = info
 		m.lock.Unlock()
 	}
-	return info.Streams[itag]
+	return info, info.Streams[itag]
 }
 
 func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
@@ -93,12 +99,17 @@ func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
 
 // Response create send task that send data to dc
 func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) error {
-	item := m.getItemInfo(id)
+	vinfo, item := m.getVideoInfo(id)
 	if !itemValid(item) {
 		return nil
 	}
-	itemMediaMap := request.Parse(item)
-	return itemMediaMap
+	bs, err := request.GetIndex(vinfo.ID, item, int(index))
+	if err != nil {
+		return err
+	}
+	// TODO start send chunk bs
+	log.Print(bs)
+	return nil
 }
 
 // QuitResponse cancel that send task
