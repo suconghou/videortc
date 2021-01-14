@@ -89,16 +89,11 @@ id 为形式 `vid:itag|index`
 
 监听到 quit 则停止队列发送
 
-TODO 
-
-task queue
-
-ebml
-sidx parser
-
 设计一个队列发送器
 
 创建队列,对数据切片发送
 
 每个dc 维护一个队列
 如果发送失败,则放弃本次发送
+
+TODO total quit

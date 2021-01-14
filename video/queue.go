@@ -10,6 +10,8 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
+const maxBufferedAmount uint64 = 1024 * 1024 // 1 MB
+
 var (
 	queueManager = newdcQueueManager()
 )
@@ -143,10 +145,15 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 				if d.dc.ReadyState() != webrtc.DataChannelStateOpen {
 					return nil
 				}
-				// TODO flow control
 				err = d.dc.Send(append(chunkHeader(task.id, task.index, i, l), buffer...))
 				if err != nil {
 					break
+				} else {
+					var n = d.dc.BufferedAmount() / maxBufferedAmount
+					if n < 1 {
+						n = 1
+					}
+					time.Sleep(time.Second * time.Duration(n))
 				}
 			}
 		}

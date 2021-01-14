@@ -57,7 +57,7 @@ func itemValid(item *youtubevideoparser.StreamItem) bool {
 	return true
 }
 
-// Ok test if this resource ok, TODO with cache
+// Ok test if this resource ok
 func (m *MediaHub) Ok(id string) bool {
 	item := m.getItemInfo(id)
 	return itemValid(item)
