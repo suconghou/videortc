@@ -6,22 +6,23 @@ import (
 	"sync"
 	"time"
 	"videortc/request"
+	"videortc/util"
 
 	"github.com/pion/webrtc/v3"
 
-	"github.com/suconghou/videoproxy/util"
+	vutil "github.com/suconghou/videoproxy/util"
 	"github.com/suconghou/youtubevideoparser"
 )
 
 const chunk = 51200
 
 var (
-	videoClient = util.MakeClient("VIDEO_PROXY", time.Minute)
+	videoClient = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
 )
 
 type videoItem struct {
-	*youtubevideoparser.VideoInfo
-	time time.Time
+	vinfo *youtubevideoparser.VideoInfo
+	time  time.Time
 }
 
 // MediaHub manage all videos
@@ -67,7 +68,7 @@ func (m *MediaHub) getItemInfo(id string) *youtubevideoparser.StreamItem {
 	return item
 }
 
-func (m *MediaHub) getVideoInfo(id string) (*videoItem, *youtubevideoparser.StreamItem) {
+func (m *MediaHub) getVideoInfo(id string) (*youtubevideoparser.VideoInfo, *youtubevideoparser.StreamItem) {
 	var arr = strings.Split(id, ":")
 	if len(arr) != 2 {
 		return nil, nil
@@ -84,7 +85,7 @@ func (m *MediaHub) getVideoInfo(id string) (*videoItem, *youtubevideoparser.Stre
 	if info == nil || now.Sub(info.time) > time.Hour {
 		vinfo, err := getInfo(vid)
 		if err != nil {
-			return nil, nil
+			util.Log.Print(err)
 		}
 		info = &videoItem{
 			vinfo,
@@ -94,7 +95,10 @@ func (m *MediaHub) getVideoInfo(id string) (*videoItem, *youtubevideoparser.Stre
 		m.videos[id] = info
 		m.lock.Unlock()
 	}
-	return info, info.Streams[itag]
+	if info.vinfo == nil || info.vinfo.Streams == nil {
+		return info.vinfo, nil
+	}
+	return info.vinfo, info.vinfo.Streams[itag]
 }
 
 func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {

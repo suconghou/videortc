@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/suconghou/mediaindex"
-	"github.com/suconghou/videoproxy/util"
+	vutil "github.com/suconghou/videoproxy/util"
 
 	"github.com/suconghou/youtubevideoparser"
 	"github.com/suconghou/youtubevideoparser/request"
@@ -17,7 +17,7 @@ import (
 const baseURL = "http://share.suconghou.cn/video"
 
 var (
-	client          = util.MakeClient("VIDEO_PROXY", time.Minute)
+	client          = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
 	mediaIndexCache sync.Map
 )
 

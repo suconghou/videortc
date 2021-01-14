@@ -3,9 +3,9 @@ package video
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
+	"videortc/util"
 
 	"github.com/pion/webrtc/v3"
 )
@@ -169,7 +169,7 @@ func (d *dcQueue) loopTask() {
 				continue
 			}
 			if err := d.doTask(task); err != nil {
-				log.Print(err)
+				util.Log.Print(err)
 			}
 		}
 	}
