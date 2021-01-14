@@ -84,7 +84,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 	defer m.lock.Unlock()
 	peer, ok = m.peers[id]
 	if ok {
-		if !(peer.dc == nil || peer.dc.ReadyState() == webrtc.DataChannelStateClosed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateClosed) {
+		if !(peer.dc == nil || peer.dc.ReadyState() == webrtc.DataChannelStateClosed || peer.dc.ReadyState() == webrtc.DataChannelStateClosing || peer.conn.ConnectionState() == webrtc.PeerConnectionStateFailed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateClosed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateDisconnected) {
 			return peer, false, nil
 		}
 	}
