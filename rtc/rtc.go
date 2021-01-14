@@ -74,7 +74,7 @@ func (m *PeerManager) SetSignal(ws *ws.Peer) {
 }
 
 // Ensure 确保已存在此Peer的实例
-func (m *PeerManager) Ensure(id string) (*Peer, error) {
+func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 	var (
 		peer *Peer
 		ok   bool
@@ -83,14 +83,17 @@ func (m *PeerManager) Ensure(id string) (*Peer, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	peer, ok = m.peers[id]
-	if !ok {
-		peer, err = NewPeer(m.ws)
-		if err != nil {
-			return nil, err
+	if ok {
+		if !(peer.dc == nil || peer.dc.ReadyState() == webrtc.DataChannelStateClosed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateClosed) {
+			return peer, false, nil
 		}
-		m.peers[id] = peer
 	}
-	return peer, nil
+	peer, err = NewPeer(m.ws)
+	if err != nil {
+		return nil, true, err
+	}
+	m.peers[id] = peer
+	return peer, true, nil
 }
 
 //Create 创建新的Peer实例,如果有旧的则清理它
@@ -121,14 +124,14 @@ func (m *PeerManager) Create(id string) (*Peer, error) {
 func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 	if msg.Event == "offer" {
 		// someone send me offer , we should accept that
-		peer, err := m.Ensure(msg.From)
+		peer, _, err := m.Ensure(msg.From)
 		if err != nil {
 			return err
 		}
 		var sdp = msg.Data.Get("sdp").String()
 		return peer.Accept(webrtc.SDPTypeOffer, sdp, msg)
 	} else if msg.Event == "candidate" {
-		peer, err := m.Ensure(msg.From)
+		peer, _, err := m.Ensure(msg.From)
 		if err != nil {
 			return err
 		}
@@ -143,7 +146,7 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 		}
 		return peer.conn.AddICECandidate(candidate)
 	} else if msg.Event == "answer" {
-		peer, err := m.Ensure(msg.From)
+		peer, _, err := m.Ensure(msg.From)
 		if err != nil {
 			return err
 		}
@@ -332,6 +335,11 @@ func (p *Peer) Close() error {
 		return err1
 	}
 	return err2
+}
+
+// Ping send ping to dc
+func (p *Peer) Ping() error {
+	return sendPing(p.dc)
 }
 
 func initDc(d *webrtc.DataChannel) {

@@ -111,26 +111,44 @@ func peers(w http.ResponseWriter, r *http.Request) {
 
 func webrtcLoop() {
 	manager = rtc.NewPeerManager()
-	var init = func(msg *ws.InitEvent) error {
+	var init = func(msg *ws.InitEvent) {
 		// 我上线后别人会主动链接我,我只需要预先为这些peer创建资源,等待MsgEvent发来的offer
 		for _, id := range msg.IDS {
-			_, err := manager.Ensure(id)
+			peer, created, err := manager.Ensure(id)
 			if err != nil {
-				return err
+				util.Log.Print(err)
+				return
+			}
+			if !created {
+				if err := peer.Ping(); err != nil {
+					util.Log.Print(err)
+				}
 			}
 		}
-		return nil
 	}
-	var online = func(msg *ws.OnlineEvent) error {
-		// 别人上线后,需要我主动链接他
-		peer, err := manager.Create(msg.ID)
+	var online = func(msg *ws.OnlineEvent) {
+		// 对方刷新页面上线,或者ws重连上线,如果是ws重连上线,这个连接还没断开,则不需要做其他操作
+		peer, created, err := manager.Ensure(msg.ID)
 		if err != nil {
-			return err
+			util.Log.Print(err)
+			return
 		}
-		return peer.Connect(msg.ID)
+		if created {
+			err = peer.Connect(msg.ID)
+			if err != nil {
+				util.Log.Print(err)
+			}
+			return
+		}
+		err = peer.Ping()
+		if err != nil {
+			util.Log.Print(err)
+		}
 	}
-	var umsg = func(msg *ws.MsgEvent) error {
-		return manager.Dispatch(msg)
+	var umsg = func(msg *ws.MsgEvent) {
+		if err := manager.Dispatch(msg); err != nil {
+			util.Log.Print(err)
+		}
 	}
 	signal := &ws.Peer{
 		ID:           "zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r",

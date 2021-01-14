@@ -32,9 +32,9 @@ type MsgEvent struct {
 // Peer mean one ws conn
 type Peer struct {
 	ID           string
-	OnInit       func(msg *InitEvent) error
-	OnUserOnline func(msg *OnlineEvent) error
-	OnUserMsg    func(msg *MsgEvent) error
+	OnInit       func(msg *InitEvent)
+	OnUserOnline func(msg *OnlineEvent)
+	OnUserMsg    func(msg *MsgEvent)
 	conn         *websocket.Conn
 	initMsg      chan *InitEvent
 	onlineMsg    chan *OnlineEvent
@@ -48,12 +48,10 @@ func (p *Peer) Loop() {
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
 	p.send = make(chan interface{})
-	var wsMsgWorker = make(chan func() error)
+	var wsMsgWorker = make(chan func())
 	go func() {
 		for fn := range wsMsgWorker {
-			if err := fn(); err != nil {
-				util.Log.Print(err)
-			}
+			fn()
 		}
 	}()
 	go func() {
@@ -83,16 +81,16 @@ func (p *Peer) Loop() {
 	for {
 		select {
 		case data := <-p.initMsg:
-			wsMsgWorker <- func() error {
-				return p.OnInit(data)
+			wsMsgWorker <- func() {
+				p.OnInit(data)
 			}
 		case data := <-p.onlineMsg:
-			wsMsgWorker <- func() error {
-				return p.OnUserOnline(data)
+			wsMsgWorker <- func() {
+				p.OnUserOnline(data)
 			}
 		case data := <-p.userMsg:
-			wsMsgWorker <- func() error {
-				return p.OnUserMsg(data)
+			wsMsgWorker <- func() {
+				p.OnUserMsg(data)
 			}
 		}
 	}
