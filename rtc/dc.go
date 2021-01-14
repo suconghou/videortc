@@ -123,6 +123,10 @@ func sendPong(d *webrtc.DataChannel) error {
 	return d.SendText(`{"event":"pong"}`)
 }
 
+func sendPing(d *webrtc.DataChannel) error {
+	return d.SendText(`{"event":"ping"}`)
+}
+
 func sendFound(d *webrtc.DataChannel, v *foundEvent) error {
 	bs, err := json.Marshal(v)
 	if err != nil {

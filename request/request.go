@@ -94,11 +94,11 @@ func getData(vid string, itag string, start int, end int, item *youtubevideopars
 }
 
 func getByUpstream(vid string, itag string, start int, end int) ([]byte, error) {
-	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end)
+	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
 	return request.GetURLData(url, true, client)
 }
 
 func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) ([]byte, error) {
-	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end)
+	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
 	return request.GetURLData(url, true, client)
 }

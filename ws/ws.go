@@ -48,9 +48,9 @@ func (p *Peer) Loop() {
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
 	p.send = make(chan interface{})
-	var worker = make(chan func() error)
+	var wsMsgWorker = make(chan func() error)
 	go func() {
-		for fn := range worker {
+		for fn := range wsMsgWorker {
 			if err := fn(); err != nil {
 				util.Log.Print(err)
 			}
@@ -83,15 +83,15 @@ func (p *Peer) Loop() {
 	for {
 		select {
 		case data := <-p.initMsg:
-			worker <- func() error {
+			wsMsgWorker <- func() error {
 				return p.OnInit(data)
 			}
 		case data := <-p.onlineMsg:
-			worker <- func() error {
+			wsMsgWorker <- func() error {
 				return p.OnUserOnline(data)
 			}
 		case data := <-p.userMsg:
-			worker <- func() error {
+			wsMsgWorker <- func() error {
 				return p.OnUserMsg(data)
 			}
 		}

@@ -73,7 +73,7 @@ func (m *PeerManager) SetSignal(ws *ws.Peer) {
 	m.ws = ws
 }
 
-// Ensure this ws peer connect me
+// Ensure 确保已存在此Peer的实例
 func (m *PeerManager) Ensure(id string) (*Peer, error) {
 	var (
 		peer *Peer
@@ -90,6 +90,30 @@ func (m *PeerManager) Ensure(id string) (*Peer, error) {
 		}
 		m.peers[id] = peer
 	}
+	return peer, nil
+}
+
+//Create 创建新的Peer实例,如果有旧的则清理它
+func (m *PeerManager) Create(id string) (*Peer, error) {
+	var (
+		peer *Peer
+		ok   bool
+		err  error
+	)
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	peer, ok = m.peers[id]
+	if ok {
+		err = peer.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+	peer, err = NewPeer(m.ws)
+	if err != nil {
+		return nil, err
+	}
+	m.peers[id] = peer
 	return peer, nil
 }
 
@@ -244,7 +268,7 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 	return nil
 }
 
-// Connect 主动链接别人
+// Connect 主动链接别人, 必须确保这个Peer 处于 new 状态
 func (p *Peer) Connect(id string) error {
 	var fn = func() error {
 		offer, err := p.conn.CreateOffer(nil)
@@ -300,10 +324,10 @@ func (p *Peer) Connect(id string) error {
 func (p *Peer) Close() error {
 	var err1 error
 	var err2 error
-	err1 = p.conn.Close()
 	if p.dc != nil {
-		err2 = p.dc.Close()
+		err1 = p.dc.Close()
 	}
+	err2 = p.conn.Close()
 	if err1 != nil {
 		return err1
 	}
@@ -316,6 +340,9 @@ func initDc(d *webrtc.DataChannel) {
 	// Register channel opening handling
 	d.OnOpen(func() {
 		util.Log.Printf("Data channel '%s'-'%d' open. \n", d.Label(), d.ID())
+		if err := sendPing(d); err != nil {
+			util.Log.Print(err)
+		}
 	})
 
 	d.OnClose(func() {

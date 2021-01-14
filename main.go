@@ -123,7 +123,7 @@ func webrtcLoop() {
 	}
 	var online = func(msg *ws.OnlineEvent) error {
 		// 别人上线后,需要我主动链接他
-		peer, err := manager.Ensure(msg.ID)
+		peer, err := manager.Create(msg.ID)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func webrtcLoop() {
 		return manager.Dispatch(msg)
 	}
 	signal := &ws.Peer{
-		ID:           "zlnj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r",
+		ID:           "zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r",
 		OnInit:       init,
 		OnUserOnline: online,
 		OnUserMsg:    umsg,
