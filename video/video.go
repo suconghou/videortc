@@ -1,7 +1,7 @@
 package video
 
 import (
-	"log"
+	"context"
 	"strings"
 	"sync"
 	"time"
@@ -28,6 +28,14 @@ type videoItem struct {
 type MediaHub struct {
 	lock   *sync.RWMutex
 	videos map[string]*videoItem
+}
+
+type bufferTask struct {
+	id      string
+	index   uint64
+	buffers [][]byte
+	ctx     context.Context
+	cancel  context.CancelFunc
 }
 
 // NewMediaHub create MediaHub
@@ -107,16 +115,42 @@ func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) erro
 	if err != nil {
 		return err
 	}
-	// TODO start send chunk bs
-	log.Print(bs)
+	queueManager.send(d, splitBuffer(bs, id, index))
 	return nil
 }
 
 // QuitResponse cancel that send task
-func (m *MediaHub) QuitResponse(id string, index uint64) error {
+func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index uint64) error {
+	queueManager.quit(d.ID(), id, index)
 	return nil
 }
 
-func (m *MediaHub) getMediaMap() {
-
+func splitBuffer(bs []byte, id string, index uint64) *bufferTask {
+	var (
+		buffers = [][]byte{}
+		start   = 0
+		end     = 0
+		l       = len(bs)
+		data    []byte
+	)
+	for {
+		if start >= l {
+			break
+		}
+		end = start + chunk
+		if end > l {
+			end = l
+		}
+		data = bs[start:end]
+		buffers = append(buffers, data)
+		start = end
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	return &bufferTask{
+		id,
+		index,
+		buffers,
+		ctx,
+		cancel,
+	}
 }

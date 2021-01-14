@@ -14,6 +14,8 @@ import (
 	"github.com/suconghou/youtubevideoparser/request"
 )
 
+const baseURL = "http://share.suconghou.cn/video"
+
 var (
 	client          = util.MakeClient("VIDEO_PROXY", time.Minute)
 	mediaIndexCache sync.Map
@@ -92,7 +94,7 @@ func getData(vid string, itag string, start int, end int, item *youtubevideopars
 }
 
 func getByUpstream(vid string, itag string, start int, end int) ([]byte, error) {
-	var url = fmt.Sprintf("http://share.suconghou.cn/video/%s/%s/%d-%d.ts", vid, itag, start, end)
+	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end)
 	return request.GetURLData(url, true, client)
 }
 

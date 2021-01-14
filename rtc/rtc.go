@@ -24,6 +24,7 @@ var (
 			},
 		},
 	}
+	maxPacketLifeTime = uint16(2000)
 )
 
 // Peer mean rtc peer
@@ -238,7 +239,8 @@ func (p *Peer) Connect(id string) error {
 			util.Log.Print(err)
 		}
 	})
-	dc, err := p.conn.CreateDataChannel("dc", nil)
+
+	dc, err := p.conn.CreateDataChannel("dc", &webrtc.DataChannelInit{MaxPacketLifeTime: &maxPacketLifeTime})
 	if err != nil {
 		return err
 	}

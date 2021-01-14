@@ -95,7 +95,7 @@ func waitMsg() {
 			}
 		case data := <-dcQuitMsg:
 			fn := func() error {
-				return vHub.QuitResponse(data.ID, data.Index)
+				return vHub.QuitResponse(data.dc, data.ID, data.Index)
 			}
 			select {
 			case worker <- fn:
