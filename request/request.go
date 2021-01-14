@@ -17,7 +17,7 @@ import (
 const baseURL = "http://share.suconghou.cn/video"
 
 var (
-	client          = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
+	client          = vutil.MakeClient("VIDEO_PROXY", time.Second*15)
 	mediaIndexCache sync.Map
 )
 

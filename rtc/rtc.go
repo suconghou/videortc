@@ -41,6 +41,25 @@ type PeerManager struct {
 	lock  *sync.RWMutex
 }
 
+// DataChannelStatus for datachannel
+type DataChannelStatus struct {
+	ID    *uint16
+	Label string
+	State string
+}
+
+// ConnState for conn status
+type ConnState struct {
+	PeerConnectionStatus webrtc.StatsReport
+	DataChannelStatus    *DataChannelStatus
+}
+
+// PeerManagerStats for stats
+type PeerManagerStats struct {
+	ID    string
+	Peers map[string]*ConnState
+}
+
 // NewPeerManager do peer manage
 func NewPeerManager() *PeerManager {
 	return &PeerManager{
@@ -113,6 +132,31 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 		util.Log.Print(msg)
 	}
 	return nil
+}
+
+// Stats get status info
+func (m *PeerManager) Stats() *PeerManagerStats {
+	var peers = map[string]*ConnState{}
+	m.lock.RLock()
+	for id, peer := range m.peers {
+		var dstatus *DataChannelStatus
+		if peer.dc != nil {
+			dstatus = &DataChannelStatus{
+				ID:    peer.dc.ID(),
+				Label: peer.dc.Label(),
+				State: peer.dc.ReadyState().String(),
+			}
+		}
+		peers[id] = &ConnState{
+			PeerConnectionStatus: peer.conn.GetStats(),
+			DataChannelStatus:    dstatus,
+		}
+	}
+	defer m.lock.RUnlock()
+	return &PeerManagerStats{
+		ID:    m.ws.ID,
+		Peers: peers,
+	}
 }
 
 // NewPeer create Peer

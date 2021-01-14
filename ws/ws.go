@@ -57,18 +57,25 @@ func (p *Peer) Loop() {
 		}
 	}()
 	go func() {
-		for data := range p.send {
-			err := p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
-			if err != nil {
-				util.Log.Print(err)
-			}
-			err = p.conn.WriteJSON(data)
-			if err != nil {
-				util.Log.Print(err)
-			}
-			err = p.conn.SetWriteDeadline(time.Now().Add(time.Hour))
-			if err != nil {
-				util.Log.Print(err)
+		for {
+			select {
+			case data := <-p.send:
+				err := p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
+				if err != nil {
+					util.Log.Print(err)
+				}
+				err = p.conn.WriteJSON(data)
+				if err != nil {
+					util.Log.Print(err)
+				}
+				err = p.conn.SetWriteDeadline(time.Now().Add(time.Hour))
+				if err != nil {
+					util.Log.Print(err)
+				}
+			case <-time.After(time.Minute):
+				if err := p.conn.WriteControl(websocket.PingMessage, []byte(""), time.Now().Add(time.Second)); err != nil {
+					util.Log.Print(err)
+				}
 			}
 		}
 	}()
