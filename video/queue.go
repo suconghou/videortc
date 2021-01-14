@@ -62,7 +62,7 @@ func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 func (q *dcQueueManager) clean() {
 	q.lock.Lock()
 	for key, item := range q.dcConnections {
-		if item.dc.ReadyState() == webrtc.DataChannelStateClosed {
+		if item.dc.ReadyState() == webrtc.DataChannelStateClosed || item.dc.ReadyState() == webrtc.DataChannelStateClosing {
 			item.cancel()
 			delete(q.dcConnections, key)
 		}
@@ -160,7 +160,7 @@ func (d *dcQueue) loopTask() {
 		case <-d.ctx.Done():
 			return
 		default:
-			if d.dc.ReadyState() == webrtc.DataChannelStateClosed {
+			if d.dc.ReadyState() == webrtc.DataChannelStateClosed || d.dc.ReadyState() == webrtc.DataChannelStateClosing {
 				return
 			}
 			task := d.getTask()

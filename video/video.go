@@ -149,7 +149,7 @@ func splitBuffer(bs []byte, id string, index uint64) *bufferTask {
 		buffers = append(buffers, data)
 		start = end
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
 	return &bufferTask{
 		id,
 		index,
