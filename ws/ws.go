@@ -9,8 +9,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const addr = "wss://ws.feds.club/uid/"
-
 // InitEvent mean myself online , give me who is online
 type InitEvent struct {
 	IDS []string
@@ -43,7 +41,7 @@ type Peer struct {
 }
 
 // Loop msg
-func (p *Peer) Loop() {
+func (p *Peer) Loop(addr string) {
 	p.initMsg = make(chan *InitEvent)
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
@@ -77,7 +75,7 @@ func (p *Peer) Loop() {
 			}
 		}
 	}()
-	go p.connLoop()
+	go p.connLoop(addr)
 	for {
 		select {
 		case data := <-p.initMsg:
@@ -101,14 +99,14 @@ func (p *Peer) Send(data interface{}) {
 	p.send <- data
 }
 
-func (p *Peer) connLoop() {
+func (p *Peer) connLoop(addr string) {
 	for {
-		util.Log.Print(p.wsMsgLoop())
+		util.Log.Print(p.wsMsgLoop(addr))
 		time.Sleep(time.Second)
 	}
 }
 
-func (p *Peer) wsMsgLoop() error {
+func (p *Peer) wsMsgLoop(addr string) error {
 	c, _, err := websocket.DefaultDialer.Dial(addr+p.ID, nil)
 	if err != nil {
 		return err

@@ -59,3 +59,16 @@ id 为形式 `vid:itag|index`
 
 ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
+环境变量
+
+> ID 配置peer的唯一ID
+> 
+> WS_ADDR 信令服务器 , 例如"wss://ws.feds.club/uid/"
+>
+> VIDEO_PROXY 同 https://github.com/suconghou/videoproxy 的VIDEO_PROXY配置项,
+>
+> BASE_URL 媒体解析服务器, 例如 "https://video.feds.club/video" 需要支持url range
+>
+
+如果开启`BASE_URL`,则会使用指定的服务解析服务,本节点可在国内部署.
+否则,要国内部署,需使用`VIDEO_PROXY`配置代理

@@ -2,6 +2,7 @@ package video
 
 import (
 	"context"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -102,6 +103,10 @@ func (m *MediaHub) getVideoInfo(id string) (*youtubevideoparser.VideoInfo, *yout
 }
 
 func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
+	var baseURL = os.Getenv("BASE_URL")
+	if baseURL != "" {
+		return request.GetInfoByUpstream(baseURL, id)
+	}
 	parser, err := youtubevideoparser.NewParser(id, videoClient)
 	if err != nil {
 		return nil, err

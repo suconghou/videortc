@@ -1,7 +1,9 @@
 package request
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,8 +15,6 @@ import (
 	"github.com/suconghou/youtubevideoparser"
 	"github.com/suconghou/youtubevideoparser/request"
 )
-
-const baseURL = "http://share.suconghou.cn/video"
 
 var (
 	client          = vutil.MakeClient("VIDEO_PROXY", time.Second*15)
@@ -87,13 +87,14 @@ func Parse(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uint64, 
 
 // getData do http request and got vid itag data
 func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) ([]byte, error) {
-	if item == nil {
-		return getByUpstream(vid, itag, start, end)
+	var baseURL = os.Getenv("BASE_URL")
+	if baseURL != "" {
+		return getByUpstream(baseURL, vid, itag, start, end)
 	}
 	return getByOrigin(item, start, end)
 }
 
-func getByUpstream(vid string, itag string, start int, end int) ([]byte, error) {
+func getByUpstream(baseURL string, vid string, itag string, start int, end int) ([]byte, error) {
 	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
 	return request.GetURLData(url, true, client)
 }
@@ -101,4 +102,16 @@ func getByUpstream(vid string, itag string, start int, end int) ([]byte, error) 
 func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) ([]byte, error) {
 	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
 	return request.GetURLData(url, true, client)
+}
+
+// GetInfoByUpstream 媒体索引也用upstream
+func GetInfoByUpstream(baseURL string, vid string) (*youtubevideoparser.VideoInfo, error) {
+	var url = fmt.Sprintf("%s/%s.json", baseURL, vid)
+	bs, err := request.GetURLData(url, true, client)
+	if err != nil {
+		return nil, err
+	}
+	var data *youtubevideoparser.VideoInfo
+	err = json.Unmarshal(bs, &data)
+	return data, err
 }
