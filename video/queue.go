@@ -61,6 +61,7 @@ func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 	conn.addTask(buffer)
 }
 
+// 检查中断的DataChannel,清理任务
 func (q *dcQueueManager) clean() {
 	q.lock.Lock()
 	for key, item := range q.dcConnections {
@@ -144,12 +145,16 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 	select {
 	case <-task.ctx.Done():
 		return nil
+	case <-d.ctx.Done():
+		return nil
 	default:
 		var err error
 		var l = len(task.buffers)
 		for i, buffer := range task.buffers {
 			select {
 			case <-task.ctx.Done():
+				return nil
+			case <-d.ctx.Done():
 				return nil
 			default:
 				if d.dc.ReadyState() != webrtc.DataChannelStateOpen {
