@@ -1,78 +1,44 @@
 
+系统启动后与WS建立连接
+
+建立连接成功收到`init`事件
+
+如有其它在线用户,则`init`事件将会返回,其它已在线用户会收到此用户`online`事件
+
+已在线用户会主动链接新`online`的用户,本端等待链接
+
+连接使用WS交换信令信息.
+
+链接建立后会建立DataChannel用于数据通信
+
+DataChannel 发送文本消息(P2P分片查询协商)和二进制消息(媒体数据)
 
 
-ws的任务是传输信令,和节点发现.
-
-跟踪上线的用户,与上线的所有用户,发送P2P链接请求
-
-最终维护所有P2P链接,被动接受datachannel数据,
-
-监听到是下载分片请求,则立即下载并发送出去
-
-
-
-ws.Loop 开始建立链接,监听消息
-
-
-收到 offer 
-
-收到 candidate
-
-回复 answer
-
-回复 candidate
-
-
-
-====
-
-
-收到 offer
-
-回复 answer
-
-收到 candidate
-
-收到 candidate
-
-
-主动连接端 
-
-createDataChannel 
-
-
-
-消息
+消息类型有
 
 ping
 
 pong
 
-对方发送 query
+对方发送的`query`
 
-我们回复found
+我们回复的`found`
 
-resolve
+对方发来的`resolve`
 
-quit
+对方发来的`quit`
 
+等, 还有其他本系统不需要实现, 同 https://github.com/suconghou/libwebrtc
 
-message.buffer
-
-buffer.recv
-
-buffer
-
-等, 
 我们作为一个P2P节点,不向别人索要资源,只提供资源,只需要实现
 
 监听 ping 回复 pong
 监听到 pong 无需处理
-监听到 query 回复 found
-监听到 resolve 回复二进制内容消息
+监听到 query 分析是否可用 回复 found
+监听到 resolve 回复二进制媒体消息
 
-回复二进制内容消息为分片数据,50kb一分片
-须由队列执行 发送 buffer.recv,算上头部30字节 共计 50KB + 30字节
+回复二进制媒体消息为分片数据,50kb一分片
+由队列执行,前30字节为数据包header,算上头部30字节 共计 50KB + 30字节
 头部格式为 `["id",i,n]`
 
 i 为当前分片的需要,从0开始
@@ -86,14 +52,10 @@ id 为形式 `vid:itag|index`
 > index 为资源媒体sidx或cues的媒体分片
 
 
+监听到 quit 则会给队列发送消息,停止队列
 
-监听到 quit 则停止队列发送
 
-设计一个队列发送器
+## 配置
 
-创建队列,对数据切片发送
+ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
-每个dc 维护一个队列
-如果发送失败,则放弃本次发送
-
-TODO total quit

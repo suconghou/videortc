@@ -43,11 +43,15 @@ func main() {
 }
 
 func serve(host string, port int) error {
+	var id = os.Getenv("ID")
+	if len(id) != 36 {
+		return fmt.Errorf("error id format")
+	}
 	http.HandleFunc("/", routeMatch)
 	http.HandleFunc("/status", status)
 	http.HandleFunc("/peers", peers)
 	util.Log.Printf("Starting up on port %d", port)
-	go webrtcLoop()
+	go webrtcLoop(id)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 }
 
@@ -109,7 +113,7 @@ func peers(w http.ResponseWriter, r *http.Request) {
 	util.JSONPut(w, stat)
 }
 
-func webrtcLoop() {
+func webrtcLoop(id string) {
 	manager = rtc.NewPeerManager()
 	var init = func(msg *ws.InitEvent) {
 		// 我上线后别人会主动链接我,我只需要预先为这些peer创建资源,等待MsgEvent发来的offer
@@ -151,7 +155,7 @@ func webrtcLoop() {
 		}
 	}
 	signal := &ws.Peer{
-		ID:           "zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r",
+		ID:           id,
 		OnInit:       init,
 		OnUserOnline: online,
 		OnUserMsg:    umsg,
