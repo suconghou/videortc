@@ -107,6 +107,17 @@ func (d *dcQueue) rmTask(id string, index uint64) {
 		return
 	}
 	d.lock.Lock()
+	defer d.lock.Unlock()
+	if id == "" && index == 0 {
+		// cancel all task
+		for i, x := range d.tasks {
+			x.cancel()
+			d.tasks[i] = nil
+		}
+		d.tasks = []*bufferTask{}
+		return
+	}
+
 	i := 0 // output index
 	for _, x := range d.tasks {
 		if x.id == id && x.index == index {
@@ -123,7 +134,6 @@ func (d *dcQueue) rmTask(id string, index uint64) {
 		d.tasks[j] = nil
 	}
 	d.tasks = d.tasks[:i]
-	d.lock.Unlock()
 }
 
 func (d *dcQueue) quit(id string, index uint64) {
@@ -153,7 +163,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 					if n < 1 {
 						n = 1
 					}
-					time.Sleep(time.Second * time.Duration(n))
+					time.Sleep(time.Millisecond * time.Duration(100*n))
 				}
 			}
 		}
@@ -167,6 +177,11 @@ func (d *dcQueue) loopTask() {
 		case <-d.ctx.Done():
 			return
 		default:
+			var n = d.dc.BufferedAmount() / maxBufferedAmount
+			if n < 1 {
+				n = 1
+			}
+			time.Sleep(time.Second * time.Duration(n))
 			if d.dc.ReadyState() == webrtc.DataChannelStateClosed || d.dc.ReadyState() == webrtc.DataChannelStateClosing {
 				return
 			}
