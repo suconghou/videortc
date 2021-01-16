@@ -1,7 +1,6 @@
 package rtc
 
 import (
-	"fmt"
 	"sync"
 
 	"videortc/util"
@@ -179,7 +178,7 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 			DataChannelStatus:    dstatus,
 		}
 	}
-	defer m.lock.RUnlock()
+	m.lock.RUnlock()
 	return &PeerManagerStats{
 		ID:    m.ws.ID,
 		Peers: peers,
@@ -403,7 +402,7 @@ func initDc(d *webrtc.DataChannel) {
 				return
 			}
 		}
-		fmt.Printf("Message from DataChannel '%s'-'%d': '%s'\n", d.Label(), d.ID(), string(msg.Data))
+		util.Log.Printf("Message from DataChannel '%s'-'%d': '%s'\n", d.Label(), d.ID(), string(msg.Data))
 
 	})
 

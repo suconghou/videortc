@@ -3,6 +3,8 @@ package request
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -19,7 +21,17 @@ import (
 var (
 	client          = vutil.MakeClient("VIDEO_PROXY", time.Second*15)
 	mediaIndexCache sync.Map
+	httpCache       sync.Map
+	headers         = http.Header{
+		"User-Agent":      []string{"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36"},
+		"Accept-Language": []string{"zh-CN,zh;q=0.9,en;q=0.8"},
+	}
 )
+
+type cacheItem struct {
+	data []byte
+	err  error
+}
 
 func cacheGet(key string) map[int][2]uint64 {
 	v, ok := mediaIndexCache.Load(key)
@@ -114,4 +126,29 @@ func GetInfoByUpstream(baseURL string, vid string) (*youtubevideoparser.VideoInf
 	var data *youtubevideoparser.VideoInfo
 	err = json.Unmarshal(bs, &data)
 	return data, err
+}
+
+// LockGet with lock & cache
+func LockGet(url string) ([]byte, error) {
+	return nil, nil
+}
+
+// Get http data
+func Get(url string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = headers
+	resp, err := client.Do(req)
+	if err == nil {
+		if resp.StatusCode != http.StatusOK {
+			err = fmt.Errorf("%s:%s", url, resp.Status)
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
 }

@@ -158,6 +158,6 @@ func (p *Peer) wsMsgLoop(addr string) error {
 			util.Log.Print(string(data))
 		}
 	}
-	defer c.Close()
+	c.Close()
 	return err
 }
