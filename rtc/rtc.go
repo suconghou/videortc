@@ -1,6 +1,7 @@
 package rtc
 
 import (
+	"fmt"
 	"sync"
 
 	"videortc/util"
@@ -83,7 +84,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 	peer, ok = m.peers[id]
 	m.lock.RUnlock()
 	if ok {
-		if peerStatusOk(peer) {
+		if isPeerOk(peer) {
 			return peer, false, nil
 		}
 		// 当发现一个peer已存在但是非健康的,就启动清理工作,当前的这个peer会被检测到然后清理
@@ -99,31 +100,15 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 	return peer, true, nil
 }
 
-//Create 创建新的Peer实例,如果有旧的则清理它
-func (m *PeerManager) Create(id string) (*Peer, error) {
+//get 创建新的Peer实例,如果有旧的则清理它
+func (m *PeerManager) getPeer(id string) *Peer {
 	var (
 		peer *Peer
-		ok   bool
-		err  error
 	)
 	m.lock.RLock()
-	peer, ok = m.peers[id]
+	peer = m.peers[id]
 	m.lock.RUnlock()
-	if ok {
-		err = peer.Close()
-		m.Clean()
-		if err != nil {
-			return nil, err
-		}
-	}
-	peer, err = NewPeer(m.ws)
-	if err != nil {
-		return nil, err
-	}
-	m.lock.Lock()
-	m.peers[id] = peer
-	m.lock.Unlock()
-	return peer, nil
+	return peer
 }
 
 // Dispatch message to peer ,此函数不能阻塞太久, Accept 可能耗时5s
@@ -137,9 +122,9 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 		var sdp = msg.Data.Get("sdp").String()
 		return peer.Accept(webrtc.SDPTypeOffer, sdp, msg)
 	} else if msg.Event == "candidate" {
-		peer, _, err := m.Ensure(msg.From)
-		if err != nil {
-			return err
+		peer := m.getPeer(msg.From)
+		if peer == nil {
+			return fmt.Errorf("not found peer %s", msg.From)
 		}
 		var (
 			sdpMid        = msg.Data.Get("sdpMid").String()
@@ -152,9 +137,9 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 		}
 		return peer.conn.AddICECandidate(candidate)
 	} else if msg.Event == "answer" {
-		peer, _, err := m.Ensure(msg.From)
-		if err != nil {
-			return err
+		peer := m.getPeer(msg.From)
+		if peer == nil {
+			return fmt.Errorf("peer not found %s", msg.From)
 		}
 		var desc = webrtc.SessionDescription{
 			Type: webrtc.SDPTypeAnswer,
@@ -172,7 +157,7 @@ func (m *PeerManager) Clean() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	for k, p := range m.peers {
-		if !peerStatusOk(p) {
+		if !isPeerOk(p) {
 			p.Close()
 			delete(m.peers, k)
 		}
@@ -427,6 +412,16 @@ func initDc(d *webrtc.DataChannel) {
 
 }
 
-func peerStatusOk(peer *Peer) bool {
-	return !(peer.dc == nil || peer.dc.ReadyState() == webrtc.DataChannelStateClosed || peer.dc.ReadyState() == webrtc.DataChannelStateClosing || peer.conn.ConnectionState() == webrtc.PeerConnectionStateFailed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateClosed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateDisconnected)
+func isPeerOk(peer *Peer) bool {
+	var cstatus = peer.conn.ConnectionState()
+	if cstatus == webrtc.PeerConnectionStateDisconnected || cstatus == webrtc.PeerConnectionStateClosed || cstatus == webrtc.PeerConnectionStateFailed {
+		return false
+	}
+	if peer.dc != nil {
+		var dstatus = peer.dc.ReadyState()
+		if dstatus == webrtc.DataChannelStateClosed || dstatus == webrtc.DataChannelStateClosing {
+			return false
+		}
+	}
+	return true
 }

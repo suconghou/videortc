@@ -79,3 +79,9 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 对指定的函数调用,当上次调用未执行完,时,下次调用被阻塞,等待上次调用执行完,返回上次调用的执行结果
 
 自定义一个Locker
+
+`AddICECandidate` 的调用,必须确保`RemoteDescription`已被set
+
+
+
+
