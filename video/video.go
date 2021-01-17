@@ -19,6 +19,7 @@ const chunk = 51200
 
 var (
 	videoClient = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
+	pendings    = map[string]chan struct{}{}
 )
 
 type videoItem struct {

@@ -79,19 +79,23 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 		ok   bool
 		err  error
 	)
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.lock.RLock()
 	peer, ok = m.peers[id]
+	m.lock.RUnlock()
 	if ok {
-		if !(peer.dc == nil || peer.dc.ReadyState() == webrtc.DataChannelStateClosed || peer.dc.ReadyState() == webrtc.DataChannelStateClosing || peer.conn.ConnectionState() == webrtc.PeerConnectionStateFailed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateClosed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateDisconnected) {
+		if peerStatusOk(peer) {
 			return peer, false, nil
 		}
+		// 当发现一个peer已存在但是非健康的,就启动清理工作,当前的这个peer会被检测到然后清理
+		m.Clean()
 	}
 	peer, err = NewPeer(m.ws)
 	if err != nil {
 		return nil, true, err
 	}
+	m.lock.Lock()
 	m.peers[id] = peer
+	m.lock.Unlock()
 	return peer, true, nil
 }
 
@@ -102,11 +106,12 @@ func (m *PeerManager) Create(id string) (*Peer, error) {
 		ok   bool
 		err  error
 	)
-	m.lock.Lock()
-	defer m.lock.Unlock()
+	m.lock.RLock()
 	peer, ok = m.peers[id]
+	m.lock.RUnlock()
 	if ok {
 		err = peer.Close()
+		m.Clean()
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +120,9 @@ func (m *PeerManager) Create(id string) (*Peer, error) {
 	if err != nil {
 		return nil, err
 	}
+	m.lock.Lock()
 	m.peers[id] = peer
+	m.lock.Unlock()
 	return peer, nil
 }
 
@@ -158,6 +165,18 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 		util.Log.Print(msg)
 	}
 	return nil
+}
+
+// Clean delete closed peers
+func (m *PeerManager) Clean() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for k, p := range m.peers {
+		if !peerStatusOk(p) {
+			p.Close()
+			delete(m.peers, k)
+		}
+	}
 }
 
 // Stats get status info
@@ -406,4 +425,8 @@ func initDc(d *webrtc.DataChannel) {
 
 	})
 
+}
+
+func peerStatusOk(peer *Peer) bool {
+	return !(peer.dc == nil || peer.dc.ReadyState() == webrtc.DataChannelStateClosed || peer.dc.ReadyState() == webrtc.DataChannelStateClosing || peer.conn.ConnectionState() == webrtc.PeerConnectionStateFailed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateClosed || peer.conn.ConnectionState() == webrtc.PeerConnectionStateDisconnected)
 }

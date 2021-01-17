@@ -168,6 +168,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 					if n < 1 {
 						n = 1
 					}
+					util.Log.Print(n)
 					time.Sleep(time.Millisecond * time.Duration(100*n))
 				}
 			}
@@ -186,6 +187,7 @@ func (d *dcQueue) loopTask() {
 			if n < 1 {
 				n = 1
 			}
+			util.Log.Print(n)
 			time.Sleep(time.Second * time.Duration(n))
 			if d.dc.ReadyState() == webrtc.DataChannelStateClosed || d.dc.ReadyState() == webrtc.DataChannelStateClosing {
 				return
