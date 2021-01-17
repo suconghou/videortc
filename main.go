@@ -151,6 +151,10 @@ func webrtcLoop(id string, addr string) {
 		err = peer.Ping()
 		if err != nil {
 			util.Log.Print(err)
+			// 不是新建的,但是也无法Ping,可能datachannel还是处于connecting状态,属于PeerConnection误报,试下重连
+			if err = peer.Connect(msg.ID); err != nil {
+				util.Log.Print(err)
+			}
 		}
 	}
 	var umsg = func(msg *ws.MsgEvent) {
