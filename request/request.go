@@ -1,11 +1,8 @@
 package request
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -13,28 +10,14 @@ import (
 	"time"
 
 	"github.com/suconghou/mediaindex"
-	vutil "github.com/suconghou/videoproxy/util"
 
 	"github.com/suconghou/youtubevideoparser"
 )
 
 var (
-	client          = vutil.MakeClient("VIDEO_PROXY", time.Second*15)
 	mediaIndexCache sync.Map
-	httpCache       sync.Map
-	headers         = http.Header{
-		"User-Agent":      []string{"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36"},
-		"Accept-Language": []string{"zh-CN,zh;q=0.9,en;q=0.8"},
-	}
+	httpProvider    = NewLockGeter(time.Hour)
 )
-
-type cacheItem struct {
-	time   time.Time
-	ctx    context.Context
-	cancel context.CancelFunc
-	data   []byte
-	err    error
-}
 
 func cacheGet(key string) map[int][2]uint64 {
 	v, ok := mediaIndexCache.Load(key)
@@ -111,64 +94,22 @@ func getData(vid string, itag string, start int, end int, item *youtubevideopars
 
 func getByUpstream(baseURL string, vid string, itag string, start int, end int) ([]byte, error) {
 	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
-	return LockGet(url)
+	return httpProvider.Get(url)
 }
 
 func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) ([]byte, error) {
 	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
-	return LockGet(url)
+	return httpProvider.Get(url)
 }
 
 // GetInfoByUpstream 媒体索引也用upstream
 func GetInfoByUpstream(baseURL string, vid string) (*youtubevideoparser.VideoInfo, error) {
 	var url = fmt.Sprintf("%s/%s.json", baseURL, vid)
-	bs, err := LockGet(url)
+	bs, err := httpProvider.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	var data *youtubevideoparser.VideoInfo
 	err = json.Unmarshal(bs, &data)
 	return data, err
-}
-
-// LockGet with lock & cache
-func LockGet(url string) ([]byte, error) {
-	var now = time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	t, loaded := httpCache.LoadOrStore(url, &cacheItem{
-		time:   now,
-		ctx:    ctx,
-		cancel: cancel,
-		err:    fmt.Errorf("timeout"),
-	})
-	v := t.(*cacheItem)
-	if loaded {
-		<-v.ctx.Done()
-		return v.data, v.err
-	}
-	data, err := Get(url)
-	v.data = data
-	v.err = err
-	cancel()
-	return data, err
-}
-
-// Get http data
-func Get(url string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = headers
-	resp, err := client.Do(req)
-	if err == nil {
-		if resp.StatusCode != http.StatusOK {
-			err = fmt.Errorf("%s:%s", url, resp.Status)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
 }
