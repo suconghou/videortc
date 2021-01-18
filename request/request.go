@@ -1,6 +1,7 @@
 package request
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +16,6 @@ import (
 	vutil "github.com/suconghou/videoproxy/util"
 
 	"github.com/suconghou/youtubevideoparser"
-	"github.com/suconghou/youtubevideoparser/request"
 )
 
 var (
@@ -29,8 +29,11 @@ var (
 )
 
 type cacheItem struct {
-	data []byte
-	err  error
+	time   time.Time
+	ctx    context.Context
+	cancel context.CancelFunc
+	data   []byte
+	err    error
 }
 
 func cacheGet(key string) map[int][2]uint64 {
@@ -54,7 +57,7 @@ func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) ([]byt
 	ranges := cacheGet(key)
 	if ranges == nil {
 		var err error
-		ranges, err = Parse(vid, item)
+		ranges, err = parseIndex(vid, item)
 		if err != nil {
 			return nil, err
 		}
@@ -67,8 +70,8 @@ func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) ([]byt
 	return getData(vid, item.Itag, int(info[0]), int(info[1]), item)
 }
 
-// Parse item media
-func Parse(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uint64, error) {
+// parse item media
+func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uint64, error) {
 	start, err := strconv.Atoi(item.IndexRange.Start)
 	if err != nil {
 		return nil, err
@@ -108,18 +111,18 @@ func getData(vid string, itag string, start int, end int, item *youtubevideopars
 
 func getByUpstream(baseURL string, vid string, itag string, start int, end int) ([]byte, error) {
 	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
-	return request.GetURLData(url, true, client)
+	return LockGet(url)
 }
 
 func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) ([]byte, error) {
 	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
-	return request.GetURLData(url, true, client)
+	return LockGet(url)
 }
 
 // GetInfoByUpstream 媒体索引也用upstream
 func GetInfoByUpstream(baseURL string, vid string) (*youtubevideoparser.VideoInfo, error) {
 	var url = fmt.Sprintf("%s/%s.json", baseURL, vid)
-	bs, err := request.GetURLData(url, true, client)
+	bs, err := LockGet(url)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +133,24 @@ func GetInfoByUpstream(baseURL string, vid string) (*youtubevideoparser.VideoInf
 
 // LockGet with lock & cache
 func LockGet(url string) ([]byte, error) {
-	return nil, nil
+	var now = time.Now()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	t, loaded := httpCache.LoadOrStore(url, &cacheItem{
+		time:   now,
+		ctx:    ctx,
+		cancel: cancel,
+		err:    fmt.Errorf("timeout"),
+	})
+	v := t.(*cacheItem)
+	if loaded {
+		<-v.ctx.Done()
+		return v.data, v.err
+	}
+	data, err := Get(url)
+	v.data = data
+	v.err = err
+	cancel()
+	return data, err
 }
 
 // Get http data

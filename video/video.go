@@ -19,18 +19,19 @@ const chunk = 51200
 
 var (
 	videoClient = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
-	pendings    = map[string]chan struct{}{}
 )
 
 type videoItem struct {
-	vinfo *youtubevideoparser.VideoInfo
-	time  time.Time
+	vinfo  *youtubevideoparser.VideoInfo
+	time   time.Time
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // MediaHub manage all videos
 type MediaHub struct {
-	lock   *sync.RWMutex
-	videos map[string]*videoItem
+	videos sync.Map
+	time   time.Time
 }
 
 type bufferTask struct {
@@ -44,8 +45,8 @@ type bufferTask struct {
 // NewMediaHub create MediaHub
 func NewMediaHub() *MediaHub {
 	return &MediaHub{
-		lock:   &sync.RWMutex{},
-		videos: map[string]*videoItem{},
+		videos: sync.Map{},
+		time:   time.Now(),
 	}
 }
 
@@ -76,31 +77,54 @@ func (m *MediaHub) getVideoInfo(id string) (*youtubevideoparser.VideoInfo, *yout
 		return nil, nil
 	}
 	var (
-		vid  = arr[0]
-		itag = arr[1]
-		info *videoItem
-		now  = time.Now()
+		vid   = arr[0]
+		itag  = arr[1]
+		info  *videoItem
+		now   = time.Now()
+		vinfo *youtubevideoparser.VideoInfo
+		err   error
 	)
-	m.lock.RLock()
-	info = m.videos[id]
-	m.lock.RUnlock()
-	if info == nil || now.Sub(info.time) > time.Hour {
-		vinfo, err := getInfo(vid)
-		if err != nil {
-			util.Log.Print(err)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	t, loaded := m.videos.LoadOrStore(vid, &videoItem{
+		time:   now,
+		ctx:    ctx,
+		cancel: cancel,
+	})
+	info = t.(*videoItem)
+	if loaded {
+		// 说明已存在此任务,我们只需要监听此任务是否已完成(或早已经完成),完成的任务我们获取其属性就好了
+		<-info.ctx.Done()
+		if info.vinfo == nil || info.vinfo.Streams == nil {
+			return nil, nil
 		}
-		info = &videoItem{
-			vinfo,
-			now,
+		return info.vinfo, info.vinfo.Streams[itag]
+	}
+	// 否则此任务没有并发,我们第一个执行,需要正常执行然后设置其属性,并标记已执行完成
+	vinfo, err = getInfo(vid)
+	if err != nil {
+		util.Log.Print(err)
+	}
+	info.vinfo = vinfo
+	cancel()
+	if vinfo == nil || vinfo.Streams == nil {
+		return nil, nil
+	}
+	return vinfo, vinfo.Streams[itag]
+}
+
+func (m *MediaHub) clean() {
+	var now = time.Now()
+	if now.Sub(m.time) < time.Minute {
+		return
+	}
+	m.videos.Range(func(key, value interface{}) bool {
+		var v = value.(*videoItem)
+		if v == nil || now.Sub(v.time) > time.Hour {
+			m.videos.Delete(key)
 		}
-		m.lock.Lock()
-		m.videos[id] = info
-		m.lock.Unlock()
-	}
-	if info.vinfo == nil || info.vinfo.Streams == nil {
-		return info.vinfo, nil
-	}
-	return info.vinfo, info.vinfo.Streams[itag]
+		return true
+	})
+	m.time = now
 }
 
 func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
@@ -132,6 +156,7 @@ func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) erro
 // QuitResponse cancel that send task
 func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index uint64) error {
 	queueManager.quit(d.ID(), id, index)
+	m.clean()
 	return nil
 }
 

@@ -155,13 +155,13 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 // Clean delete closed peers
 func (m *PeerManager) Clean() {
 	m.lock.Lock()
-	defer m.lock.Unlock()
 	for k, p := range m.peers {
 		if !isPeerOk(p) {
 			p.Close()
 			delete(m.peers, k)
 		}
 	}
+	m.lock.Unlock()
 }
 
 // Stats get status info
@@ -183,6 +183,7 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 		}
 	}
 	m.lock.RUnlock()
+	// TODO videos
 	return &PeerManagerStats{
 		ID:    m.ws.ID,
 		Peers: peers,
