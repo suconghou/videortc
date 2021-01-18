@@ -47,6 +47,7 @@ func NewLockGeter(cache time.Duration) *LockGeter {
 // Get with lock & cache
 func (l *LockGeter) Get(url string) ([]byte, error) {
 	var now = time.Now()
+	l.clean()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	t, loaded := l.caches.LoadOrStore(url, &cacheItem{
 		time:   now,
@@ -57,7 +58,6 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 	v := t.(*cacheItem)
 	if loaded {
 		<-v.ctx.Done()
-		l.clean()
 		return v.data, v.err
 	}
 	data, err := Get(url)
@@ -90,14 +90,12 @@ func Get(url string) ([]byte, error) {
 	}
 	req.Header = headers
 	resp, err := client.Do(req)
-	if err == nil {
-		if resp.StatusCode != http.StatusOK {
-			err = fmt.Errorf("%s:%s", url, resp.Status)
-		}
-	}
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%s:%s", url, resp.Status)
+	}
 	return ioutil.ReadAll(resp.Body)
 }

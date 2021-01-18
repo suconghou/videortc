@@ -17,8 +17,7 @@ var (
 )
 
 type dcQueueManager struct {
-	dcConnections map[*uint16]*dcQueue
-	lock          *sync.RWMutex
+	dcConnections sync.Map
 }
 
 type dcQueue struct {
@@ -31,56 +30,50 @@ type dcQueue struct {
 
 func newdcQueueManager() *dcQueueManager {
 	return &dcQueueManager{
-		dcConnections: map[*uint16]*dcQueue{},
-		lock:          &sync.RWMutex{},
+		dcConnections: sync.Map{},
 	}
 }
 
 func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
-	var did = d.ID()
-	q.lock.RLock()
-	conn := q.dcConnections[did]
-	q.lock.RUnlock()
-	if conn == nil {
-		ctx, cancel := context.WithCancel(context.Background())
-		conn = &dcQueue{
-			d,
-			[]*bufferTask{},
-			&sync.RWMutex{},
-			ctx,
-			cancel,
-		}
-		q.lock.Lock()
-		q.dcConnections[did] = conn
-		q.lock.Unlock()
-		go func() {
-			conn.loopTask()
-			q.clean()
-		}()
+	ctx, cancel := context.WithCancel(context.Background())
+	t, loaded := q.dcConnections.LoadOrStore(d.ID(), &dcQueue{
+		d,
+		[]*bufferTask{},
+		&sync.RWMutex{},
+		ctx,
+		cancel,
+	})
+	v := t.(*dcQueue)
+	v.addTask(buffer)
+	if loaded {
+		// 原本已存在此队列,此队列必然已是运行状态,本次无需操作
+		return
 	}
-	conn.addTask(buffer)
+	// 否则,是我们本次新建的队列,我们需要启动此队列
+	go func() {
+		v.loopTask()
+		q.clean()
+	}()
 }
 
 // 检查中断的DataChannel,清理任务
 func (q *dcQueueManager) clean() {
-	q.lock.Lock()
-	for key, item := range q.dcConnections {
+	q.dcConnections.Range(func(key, value interface{}) bool {
+		var item = value.(*dcQueue)
 		if item.dc.ReadyState() == webrtc.DataChannelStateClosed || item.dc.ReadyState() == webrtc.DataChannelStateClosing {
 			item.cancel()
-			delete(q.dcConnections, key)
+			q.dcConnections.Delete(key)
 		}
-	}
-	q.lock.Unlock()
+		return true
+	})
 }
 
 func (q *dcQueueManager) quit(did *uint16, id string, index uint64) {
-	q.lock.RLock()
-	conn := q.dcConnections[did]
-	q.lock.RUnlock()
-	if conn == nil {
+	v, ok := q.dcConnections.Load(did)
+	if !ok {
 		return
 	}
-	conn.quit(id, index)
+	v.(*dcQueue).quit(id, index)
 }
 
 func (d *dcQueue) addTask(buffer *bufferTask) {
