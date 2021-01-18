@@ -148,9 +148,13 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 	case <-d.ctx.Done():
 		return nil
 	default:
-		var err error
-		var l = len(task.buffers)
-		for i, buffer := range task.buffers {
+		var (
+			err    error
+			l      = len(task.buffers)
+			i      int
+			buffer []byte
+		)
+		for i, buffer = range task.buffers {
 			select {
 			case <-task.ctx.Done():
 				return nil
@@ -180,6 +184,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 
 func (d *dcQueue) loopTask() {
 	var task *bufferTask
+	var err error
 	for {
 		select {
 		case <-d.ctx.Done():
@@ -198,7 +203,7 @@ func (d *dcQueue) loopTask() {
 				time.Sleep(time.Second)
 				continue
 			}
-			if err := d.doTask(task); err != nil {
+			if err = d.doTask(task); err != nil {
 				util.Log.Print(err)
 			}
 			task = nil
