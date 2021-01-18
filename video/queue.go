@@ -171,12 +171,15 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 					time.Sleep(time.Millisecond * time.Duration(100*n))
 				}
 			}
+			task.buffers[i] = nil
 		}
+		task.buffers = nil
 		return err
 	}
 }
 
 func (d *dcQueue) loopTask() {
+	var task *bufferTask
 	for {
 		select {
 		case <-d.ctx.Done():
@@ -190,7 +193,7 @@ func (d *dcQueue) loopTask() {
 			if d.dc.ReadyState() == webrtc.DataChannelStateClosed || d.dc.ReadyState() == webrtc.DataChannelStateClosing {
 				return
 			}
-			task := d.getTask()
+			task = d.getTask()
 			if task == nil {
 				time.Sleep(time.Second)
 				continue
@@ -198,6 +201,7 @@ func (d *dcQueue) loopTask() {
 			if err := d.doTask(task); err != nil {
 				util.Log.Print(err)
 			}
+			task = nil
 		}
 	}
 }
