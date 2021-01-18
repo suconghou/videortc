@@ -15,23 +15,36 @@ import (
 )
 
 var (
-	mediaIndexCache sync.Map
-	httpProvider    = NewLockGeter(time.Hour)
+	infoMapCache sync.Map
+	httpProvider = NewLockGeter(time.Hour)
 )
 
+type infoItem struct {
+	time time.Time
+	data map[int][2]uint64
+}
+
 func cacheGet(key string) map[int][2]uint64 {
-	v, ok := mediaIndexCache.Load(key)
+	v, ok := infoMapCache.Load(key)
 	if ok {
-		val, ok := v.(map[int][2]uint64)
-		if ok {
-			return val
-		}
+		return v.(*infoItem).data
 	}
 	return nil
 }
 
 func cacheSet(key string, val map[int][2]uint64) {
-	mediaIndexCache.Store(key, val)
+	var now = time.Now()
+	infoMapCache.Range(func(key, value interface{}) bool {
+		var item = value.(*infoItem)
+		if now.Sub(item.time) < time.Hour {
+			infoMapCache.Delete(key)
+		}
+		return true
+	})
+	infoMapCache.Store(key, &infoItem{
+		time: now,
+		data: val,
+	})
 }
 
 // GetIndex with cache
