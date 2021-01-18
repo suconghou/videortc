@@ -3,6 +3,8 @@ package route
 import (
 	"net/http"
 	"regexp"
+
+	"github.com/suconghou/videoproxy/route"
 )
 
 // 路由定义
@@ -12,4 +14,4 @@ type routeInfo struct {
 }
 
 // Route for all route
-var Route = []routeInfo{}
+var Route = route.Route
