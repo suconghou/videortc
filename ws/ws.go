@@ -53,10 +53,11 @@ func (p *Peer) Loop(addr string) {
 		}
 	}()
 	go func() {
+		var err error
 		for {
 			select {
 			case data := <-p.send:
-				err := p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
+				err = p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
 				if err != nil {
 					util.Log.Print(err)
 				}
@@ -69,7 +70,7 @@ func (p *Peer) Loop(addr string) {
 					util.Log.Print(err)
 				}
 			case <-time.After(time.Minute):
-				if err := p.conn.WriteControl(websocket.PingMessage, []byte(""), time.Now().Add(time.Second)); err != nil {
+				if err = p.conn.WriteControl(websocket.PingMessage, []byte(""), time.Now().Add(time.Second)); err != nil {
 					util.Log.Print(err)
 				}
 			}
