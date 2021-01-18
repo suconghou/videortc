@@ -160,6 +160,17 @@ func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index uint64) 
 	return nil
 }
 
+// Stats output status
+func (m *MediaHub) Stats() map[string]*youtubevideoparser.VideoInfo {
+	var res = map[string]*youtubevideoparser.VideoInfo{}
+	m.videos.Range(func(key, value interface{}) bool {
+		v := value.(*videoItem)
+		res[key.(string)] = v.vinfo
+		return true
+	})
+	return res
+}
+
 func splitBuffer(bs []byte, id string, index uint64) *bufferTask {
 	var (
 		buffers = [][]byte{}

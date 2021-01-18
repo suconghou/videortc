@@ -8,6 +8,7 @@ import (
 	"videortc/ws"
 
 	"github.com/pion/webrtc/v3"
+	"github.com/suconghou/youtubevideoparser"
 	"github.com/tidwall/gjson"
 )
 
@@ -50,14 +51,15 @@ type DataChannelStatus struct {
 
 // ConnState for conn status
 type ConnState struct {
-	PeerConnectionStatus webrtc.StatsReport
 	DataChannelStatus    *DataChannelStatus
+	PeerConnectionStatus webrtc.StatsReport
 }
 
 // PeerManagerStats for stats
 type PeerManagerStats struct {
-	ID    string
-	Peers map[string]*ConnState
+	ID     string
+	Videos map[string]*youtubevideoparser.VideoInfo
+	Peers  map[string]*ConnState
 }
 
 // NewPeerManager do peer manage
@@ -178,15 +180,15 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 			}
 		}
 		peers[id] = &ConnState{
-			PeerConnectionStatus: peer.conn.GetStats(),
 			DataChannelStatus:    dstatus,
+			PeerConnectionStatus: peer.conn.GetStats(),
 		}
 	}
 	m.lock.RUnlock()
-	// TODO videos
 	return &PeerManagerStats{
-		ID:    m.ws.ID,
-		Peers: peers,
+		ID:     m.ws.ID,
+		Videos: vHub.Stats(),
+		Peers:  peers,
 	}
 }
 
