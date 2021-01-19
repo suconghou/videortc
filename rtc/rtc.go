@@ -81,6 +81,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 		ok   bool
 		err  error
 	)
+	m.cleanPeers()
 	m.lock.RLock()
 	peer, ok = m.peers[id]
 	m.lock.RUnlock()
@@ -88,8 +89,6 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 		if isPeerOk(peer) {
 			return peer, false, nil
 		}
-		// 当发现一个peer已存在但是非健康的,就启动清理工作,当前的这个peer会被检测到然后清理
-		m.cleanPeers()
 	}
 	peer, err = newPeer(m.ws)
 	if err != nil {
