@@ -171,6 +171,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 	case <-d.ctx.Done():
 		return nil
 	default:
+		// 因使用了缓存池,bs只读并且需尽快使用,等会过期将会被其他地方复用
 		bs, err := httpProvider.Get(task.target)
 		if err != nil {
 			return err
@@ -188,7 +189,9 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 			l      = len(buffers)
 			i      int
 			buffer []byte
+			start  = time.Now()
 		)
+		// 为保障buffers尽快去消费,我们限定在60s内使用(但是底层Send仍会引用此数据,实际可能大于此事件),超过这个时间作废
 		for i, buffer = range buffers {
 			select {
 			case <-task.ctx.Done():
@@ -209,6 +212,9 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 					}
 					time.Sleep(time.Millisecond * time.Duration(100*n))
 				}
+			}
+			if time.Now().Sub(start) > time.Minute {
+				return nil
 			}
 		}
 		return err

@@ -1,9 +1,10 @@
 package request
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -18,6 +19,17 @@ var (
 		"User-Agent":      []string{"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36"},
 		"Accept-Language": []string{"zh-CN,zh;q=0.9,en;q=0.8"},
 	}
+
+	bufferPool = sync.Pool{
+		New: func() interface{} {
+			return bytes.NewBuffer(make([]byte, 32*1024))
+		},
+	}
+	bytePool = sync.Pool{
+		New: func() interface{} {
+			return make([]byte, 32*1024)
+		},
+	}
 )
 
 // LockGeter for http cache & lock get
@@ -31,7 +43,7 @@ type cacheItem struct {
 	time   time.Time
 	ctx    context.Context
 	cancel context.CancelFunc
-	data   []byte
+	data   *bytes.Buffer
 	err    error
 }
 
@@ -44,7 +56,7 @@ func NewLockGeter(cache time.Duration) *LockGeter {
 	}
 }
 
-// Get with lock & cache
+// Get with lock & cache,the return bytes is readonly
 func (l *LockGeter) Get(url string) ([]byte, error) {
 	var now = time.Now()
 	l.clean()
@@ -58,13 +70,13 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 	v := t.(*cacheItem)
 	if loaded {
 		<-v.ctx.Done()
-		return v.data, v.err
+		return v.data.Bytes(), v.err
 	}
 	data, err := Get(url)
 	v.data = data
 	v.err = err
 	cancel()
-	return data, err
+	return data.Bytes(), err
 }
 
 func (l *LockGeter) clean() {
@@ -76,6 +88,7 @@ func (l *LockGeter) clean() {
 		var v = value.(*cacheItem)
 		if now.Sub(v.time) > l.cache {
 			v.cancel()
+			bufferPool.Put(v.data)
 			l.caches.Delete(key)
 		}
 		return true
@@ -83,8 +96,8 @@ func (l *LockGeter) clean() {
 	l.time = now
 }
 
-// Get http data
-func Get(url string) ([]byte, error) {
+// Get http data, the return value should be readonly
+func Get(url string) (*bytes.Buffer, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -98,5 +111,12 @@ func Get(url string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s:%s", url, resp.Status)
 	}
-	return ioutil.ReadAll(resp.Body)
+	var (
+		buffer = bufferPool.Get().(*bytes.Buffer)
+		buf    = bytePool.Get().([]byte)
+	)
+	buffer.Reset()
+	_, err = io.CopyBuffer(buffer, resp.Body, buf)
+	bytePool.Put(buf)
+	return buffer, err
 }
