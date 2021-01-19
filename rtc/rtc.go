@@ -351,7 +351,6 @@ func (p *Peer) Ping() error {
 }
 
 func initDc(d *webrtc.DataChannel) {
-	util.Log.Printf("New DataChannel %s %d\n", d.Label(), d.ID())
 
 	// Register channel opening handling
 	d.OnOpen(func() {
