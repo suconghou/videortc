@@ -48,7 +48,7 @@ func newdcQueueManager() *dcQueueManager {
 
 func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 	ctx, cancel := context.WithCancel(context.Background())
-	t, loaded := q.dcConnections.LoadOrStore(d.ID(), &dcQueue{
+	t, loaded := q.dcConnections.LoadOrStore(d, &dcQueue{
 		d,
 		[]*bufferTask{},
 		&sync.RWMutex{},
@@ -80,26 +80,25 @@ func (q *dcQueueManager) clean() {
 	})
 }
 
-func (q *dcQueueManager) quit(did *uint16, id string, index uint64) {
-	v, ok := q.dcConnections.Load(did)
+func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index uint64) {
+	v, ok := q.dcConnections.Load(d)
 	if !ok {
 		return
 	}
 	v.(*dcQueue).quit(id, index)
 }
 
-func (q *dcQueueManager) stats() map[uint16]*ItemStat {
-	var res = map[uint16]*ItemStat{}
+func (q *dcQueueManager) stats() []*ItemStat {
+	var res = []*ItemStat{}
 	q.dcConnections.Range(func(key, value interface{}) bool {
-		var id uint16 = *(key.(*uint16))
 		v := value.(*dcQueue)
-		res[id] = &ItemStat{
+		res = append(res, &ItemStat{
 			ID:       v.dc.ID(),
 			Label:    v.dc.Label(),
 			Buffered: v.dc.BufferedAmount(),
 			State:    v.dc.ReadyState().String(),
 			Tasks:    len(v.tasks),
-		}
+		})
 		return true
 	})
 	return res

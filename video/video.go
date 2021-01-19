@@ -44,7 +44,7 @@ type bufferTask struct {
 type VStatus struct {
 	Time   time.Time
 	Videos map[string]*youtubevideoparser.VideoInfo
-	Queues map[uint16]*ItemStat
+	Queues []*ItemStat
 }
 
 // NewMediaHub create MediaHub
@@ -168,7 +168,7 @@ func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) erro
 
 // QuitResponse cancel that send task
 func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index uint64) error {
-	queueManager.quit(d.ID(), id, index)
+	queueManager.quit(d, id, index)
 	m.clean()
 	return nil
 }

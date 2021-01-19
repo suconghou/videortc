@@ -70,12 +70,18 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 	v := t.(*cacheItem)
 	if loaded {
 		<-v.ctx.Done()
+		if v.data == nil {
+			return nil, v.err
+		}
 		return v.data.Bytes(), v.err
 	}
 	data, err := Get(url)
 	v.data = data
 	v.err = err
 	cancel()
+	if data == nil {
+		return nil, err
+	}
 	return data.Bytes(), err
 }
 
