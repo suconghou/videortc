@@ -126,7 +126,8 @@ func (m *MediaHub) clean() {
 	}
 	m.videos.Range(func(key, value interface{}) bool {
 		var v = value.(*videoItem)
-		if v == nil || now.Sub(v.time) > time.Hour {
+		if now.Sub(v.time) > time.Hour {
+			v.cancel()
 			m.videos.Delete(key)
 		}
 		return true

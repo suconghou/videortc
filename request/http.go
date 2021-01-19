@@ -74,7 +74,8 @@ func (l *LockGeter) clean() {
 	}
 	l.caches.Range(func(key, value interface{}) bool {
 		var v = value.(*cacheItem)
-		if v == nil || now.Sub(v.time) > l.cache {
+		if now.Sub(v.time) > l.cache {
+			v.cancel()
 			l.caches.Delete(key)
 		}
 		return true
