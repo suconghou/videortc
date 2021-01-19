@@ -33,7 +33,7 @@ type dcQueue struct {
 
 // ItemStat for queue status
 type ItemStat struct {
-	ID       *uint16
+	ID       string
 	Label    string
 	State    string
 	Tasks    int
@@ -48,7 +48,7 @@ func newdcQueueManager() *dcQueueManager {
 
 func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 	ctx, cancel := context.WithCancel(context.Background())
-	t, loaded := q.dcConnections.LoadOrStore(d, &dcQueue{
+	t, loaded := q.dcConnections.LoadOrStore(fmt.Sprintf("%d", d.ID()), &dcQueue{
 		d,
 		[]*bufferTask{},
 		&sync.RWMutex{},
@@ -81,24 +81,24 @@ func (q *dcQueueManager) clean() {
 }
 
 func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index uint64) {
-	v, ok := q.dcConnections.Load(d)
+	v, ok := q.dcConnections.Load(fmt.Sprintf("%d", d.ID()))
 	if !ok {
 		return
 	}
 	v.(*dcQueue).quit(id, index)
 }
 
-func (q *dcQueueManager) stats() []*ItemStat {
-	var res = []*ItemStat{}
+func (q *dcQueueManager) stats() map[string]*ItemStat {
+	var res = map[string]*ItemStat{}
 	q.dcConnections.Range(func(key, value interface{}) bool {
 		v := value.(*dcQueue)
-		res = append(res, &ItemStat{
-			ID:       v.dc.ID(),
+		res[key.(string)] = &ItemStat{
+			ID:       fmt.Sprintf("%d", v.dc.ID()),
 			Label:    v.dc.Label(),
 			Buffered: v.dc.BufferedAmount(),
 			State:    v.dc.ReadyState().String(),
 			Tasks:    len(v.tasks),
-		})
+		}
 		return true
 	})
 	return res

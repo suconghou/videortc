@@ -44,7 +44,7 @@ type bufferTask struct {
 type VStatus struct {
 	Time   time.Time
 	Videos map[string]*youtubevideoparser.VideoInfo
-	Queues []*ItemStat
+	Queues map[string]*ItemStat
 }
 
 // NewMediaHub create MediaHub

@@ -44,7 +44,7 @@ type PeerManager struct {
 
 // DataChannelStatus for datachannel
 type DataChannelStatus struct {
-	ID    *uint16
+	ID    string
 	Label string
 	State string
 }
@@ -172,7 +172,7 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 		var dstatus *DataChannelStatus
 		if peer.dc != nil {
 			dstatus = &DataChannelStatus{
-				ID:    peer.dc.ID(),
+				ID:    fmt.Sprintf("%d", peer.dc.ID()),
 				Label: peer.dc.Label(),
 				State: peer.dc.ReadyState().String(),
 			}
