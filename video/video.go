@@ -15,8 +15,6 @@ import (
 	"github.com/suconghou/youtubevideoparser"
 )
 
-const chunk = 51200
-
 var (
 	videoClient = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
 )
@@ -35,11 +33,11 @@ type MediaHub struct {
 }
 
 type bufferTask struct {
-	id      string
-	index   uint64
-	buffers [][]byte
-	ctx     context.Context
-	cancel  context.CancelFunc
+	id     string
+	index  uint64
+	target string
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // VStatus for status info
@@ -153,11 +151,18 @@ func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) erro
 	if !itemValid(item) {
 		return nil
 	}
-	bs, err := request.GetIndex(vinfo.ID, item, int(index))
+	target, err := request.GetIndex(vinfo.ID, item, int(index))
 	if err != nil {
 		return err
 	}
-	queueManager.send(d, splitBuffer(bs, id, index))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+	queueManager.send(d, &bufferTask{
+		id,
+		index,
+		target,
+		ctx,
+		cancel,
+	})
 	return nil
 }
 
@@ -181,35 +186,5 @@ func (m *MediaHub) Stats() *VStatus {
 		Time:   m.time,
 		Videos: res,
 		Queues: queueStat,
-	}
-}
-
-func splitBuffer(bs []byte, id string, index uint64) *bufferTask {
-	var (
-		buffers = [][]byte{}
-		start   = 0
-		end     = 0
-		l       = len(bs)
-		data    []byte
-	)
-	for {
-		if start >= l {
-			break
-		}
-		end = start + chunk
-		if end > l {
-			end = l
-		}
-		data = bs[start:end]
-		buffers = append(buffers, data)
-		start = end
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	return &bufferTask{
-		id,
-		index,
-		buffers,
-		ctx,
-		cancel,
 	}
 }

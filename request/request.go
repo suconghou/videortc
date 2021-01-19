@@ -48,22 +48,22 @@ func cacheSet(key string, val map[int][2]uint64) {
 }
 
 // GetIndex with cache
-func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) ([]byte, error) {
+func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) (string, error) {
 	var key = fmt.Sprintf("%s:%s", vid, item.Itag)
 	ranges := cacheGet(key)
 	if ranges == nil {
 		var err error
 		ranges, err = parseIndex(vid, item)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		cacheSet(key, ranges)
 	}
 	info := ranges[index]
 	if info[1] == 0 {
-		return nil, fmt.Errorf("%s:%s error get %d index range", vid, item.Itag, index)
+		return "", fmt.Errorf("%s:%s error get %d index range", vid, item.Itag, index)
 	}
-	return getData(vid, item.Itag, int(info[0]), int(info[1]), item)
+	return getData(vid, item.Itag, int(info[0]), int(info[1]), item), nil
 }
 
 // parse item media
@@ -76,7 +76,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	if err != nil {
 		return nil, err
 	}
-	bs, err := getData(vid, item.Itag, start, end, item)
+	bs, err := httpProvider.Get(getData(vid, item.Itag, start, end, item))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 }
 
 // getData do http request and got vid itag data
-func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) ([]byte, error) {
+func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) string {
 	var baseURL = os.Getenv("BASE_URL")
 	if baseURL != "" {
 		return getByUpstream(baseURL, vid, itag, start, end)
@@ -105,14 +105,12 @@ func getData(vid string, itag string, start int, end int, item *youtubevideopars
 	return getByOrigin(item, start, end)
 }
 
-func getByUpstream(baseURL string, vid string, itag string, start int, end int) ([]byte, error) {
-	var url = fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
-	return httpProvider.Get(url)
+func getByUpstream(baseURL string, vid string, itag string, start int, end int) string {
+	return fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
 }
 
-func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) ([]byte, error) {
-	var url = fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
-	return httpProvider.Get(url)
+func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) string {
+	return fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
 }
 
 // GetInfoByUpstream 媒体索引也用upstream

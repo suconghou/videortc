@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"videortc/request"
 	"videortc/util"
 
 	"github.com/pion/webrtc/v3"
 )
 
 const maxBufferedAmount uint64 = 1024 * 1024 // 1 MB
+const chunk = 51200
 
 var (
 	queueManager = newdcQueueManager()
+	httpProvider = request.NewLockGeter(time.Hour)
 )
 
 type dcQueueManager struct {
@@ -161,6 +164,11 @@ func (d *dcQueue) quit(id string, index uint64) {
 }
 
 func (d *dcQueue) doTask(task *bufferTask) error {
+	bs, err := httpProvider.Get(task.target)
+	if err != nil {
+		return err
+	}
+	var buffers = splitBuffer(bs)
 	select {
 	case <-task.ctx.Done():
 		return nil
@@ -169,11 +177,11 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 	default:
 		var (
 			err    error
-			l      = len(task.buffers)
+			l      = len(buffers)
 			i      int
 			buffer []byte
 		)
-		for i, buffer = range task.buffers {
+		for i, buffer = range buffers {
 			select {
 			case <-task.ctx.Done():
 				return nil
@@ -194,9 +202,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 					time.Sleep(time.Millisecond * time.Duration(100*n))
 				}
 			}
-			task.buffers[i] = nil
 		}
-		task.buffers = nil
 		return err
 	}
 }
@@ -236,4 +242,27 @@ func (d *dcQueue) loopTask() {
 func chunkHeader(id string, index uint64, i int, l int) []byte {
 	var header = fmt.Sprintf(`["%s|%d",%d,%d]`, id, index, i, l)
 	return []byte(fmt.Sprintf("%-30s", header))
+}
+
+func splitBuffer(bs []byte) [][]byte {
+	var (
+		buffers = [][]byte{}
+		start   = 0
+		end     = 0
+		l       = len(bs)
+		data    []byte
+	)
+	for {
+		if start >= l {
+			break
+		}
+		end = start + chunk
+		if end > l {
+			end = l
+		}
+		data = bs[start:end]
+		buffers = append(buffers, data)
+		start = end
+	}
+	return buffers
 }
