@@ -2,6 +2,7 @@ package rtc
 
 import (
 	"encoding/json"
+	"io"
 	"time"
 	"videortc/util"
 	"videortc/video"
@@ -124,6 +125,9 @@ func sendPong(d *webrtc.DataChannel) error {
 }
 
 func sendPing(d *webrtc.DataChannel) error {
+	if d == nil {
+		return io.ErrClosedPipe
+	}
 	return d.SendText(`{"event":"ping"}`)
 }
 
