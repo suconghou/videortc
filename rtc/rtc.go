@@ -89,9 +89,9 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 			return peer, false, nil
 		}
 		// 当发现一个peer已存在但是非健康的,就启动清理工作,当前的这个peer会被检测到然后清理
-		m.Clean()
+		m.cleanPeers()
 	}
-	peer, err = NewPeer(m.ws)
+	peer, err = newPeer(m.ws)
 	if err != nil {
 		return nil, true, err
 	}
@@ -153,8 +153,8 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 	return nil
 }
 
-// Clean delete closed peers
-func (m *PeerManager) Clean() {
+// cleanPeers delete closed peers
+func (m *PeerManager) cleanPeers() {
 	m.lock.Lock()
 	for k, p := range m.peers {
 		if !isPeerOk(p) {
@@ -195,8 +195,8 @@ func (m *PeerManager) StatsVideo() *video.VStatus {
 	return vHub.Stats()
 }
 
-// NewPeer create Peer
-func NewPeer(sharedWs *ws.Peer) (*Peer, error) {
+// newPeer create Peer
+func newPeer(sharedWs *ws.Peer) (*Peer, error) {
 	peerConnection, err := webrtc.NewPeerConnection(config)
 	if err != nil {
 		return nil, err
