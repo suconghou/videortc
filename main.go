@@ -124,8 +124,11 @@ func webrtcLoop(id string, addr string) {
 	manager = rtc.NewPeerManager()
 	var init = func(msg *ws.InitEvent) {
 		// 我上线后别人会主动链接我,我只需要预先为这些peer创建资源,等待MsgEvent发来的offer
-		for _, id := range msg.IDS {
-			peer, created, err := manager.Ensure(id)
+		for _, online := range msg.IDS {
+			if online == id {
+				continue
+			}
+			peer, created, err := manager.Ensure(online)
 			if err != nil {
 				util.Log.Print(err)
 				return
@@ -138,6 +141,9 @@ func webrtcLoop(id string, addr string) {
 		}
 	}
 	var online = func(msg *ws.OnlineEvent) {
+		if id == msg.ID {
+			return
+		}
 		// 对方刷新页面上线,或者ws重连上线,如果是ws重连上线,这个连接还没断开,则不需要做其他操作
 		peer, created, err := manager.Ensure(msg.ID)
 		if err != nil {
@@ -161,6 +167,9 @@ func webrtcLoop(id string, addr string) {
 		}
 	}
 	var umsg = func(msg *ws.MsgEvent) {
+		if msg.From == id {
+			return
+		}
 		if err := manager.Dispatch(msg); err != nil {
 			util.Log.Print(err)
 		}
