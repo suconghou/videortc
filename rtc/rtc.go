@@ -5,10 +5,10 @@ import (
 	"sync"
 
 	"videortc/util"
+	"videortc/video"
 	"videortc/ws"
 
 	"github.com/pion/webrtc/v3"
-	"github.com/suconghou/youtubevideoparser"
 	"github.com/tidwall/gjson"
 )
 
@@ -57,9 +57,8 @@ type ConnState struct {
 
 // PeerManagerStats for stats
 type PeerManagerStats struct {
-	ID     string
-	Videos map[string]*youtubevideoparser.VideoInfo
-	Peers  map[string]*ConnState
+	ID    string
+	Peers map[string]*ConnState
 }
 
 // NewPeerManager do peer manage
@@ -186,10 +185,14 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 	}
 	m.lock.RUnlock()
 	return &PeerManagerStats{
-		ID:     m.ws.ID,
-		Videos: vHub.Stats(),
-		Peers:  peers,
+		ID:    m.ws.ID,
+		Peers: peers,
 	}
+}
+
+// StatsVideo for video cache info
+func (m *PeerManager) StatsVideo() *video.VStatus {
+	return vHub.Stats()
 }
 
 // NewPeer create Peer

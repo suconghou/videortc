@@ -42,6 +42,13 @@ type bufferTask struct {
 	cancel  context.CancelFunc
 }
 
+// VStatus for status info
+type VStatus struct {
+	Time   time.Time
+	Videos map[string]*youtubevideoparser.VideoInfo
+	Queues map[uint16]*ItemStat
+}
+
 // NewMediaHub create MediaHub
 func NewMediaHub() *MediaHub {
 	return &MediaHub{
@@ -161,14 +168,19 @@ func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index uint64) 
 }
 
 // Stats output status
-func (m *MediaHub) Stats() map[string]*youtubevideoparser.VideoInfo {
+func (m *MediaHub) Stats() *VStatus {
 	var res = map[string]*youtubevideoparser.VideoInfo{}
 	m.videos.Range(func(key, value interface{}) bool {
 		v := value.(*videoItem)
 		res[key.(string)] = v.vinfo
 		return true
 	})
-	return res
+	queueStat := queueManager.stats()
+	return &VStatus{
+		Time:   m.time,
+		Videos: res,
+		Queues: queueStat,
+	}
 }
 
 func splitBuffer(bs []byte, id string, index uint64) *bufferTask {

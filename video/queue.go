@@ -28,6 +28,15 @@ type dcQueue struct {
 	cancel context.CancelFunc
 }
 
+// ItemStat for queue status
+type ItemStat struct {
+	ID       *uint16
+	Label    string
+	State    string
+	Tasks    int
+	Buffered uint64
+}
+
 func newdcQueueManager() *dcQueueManager {
 	return &dcQueueManager{
 		dcConnections: sync.Map{},
@@ -74,6 +83,23 @@ func (q *dcQueueManager) quit(did *uint16, id string, index uint64) {
 		return
 	}
 	v.(*dcQueue).quit(id, index)
+}
+
+func (q *dcQueueManager) stats() map[uint16]*ItemStat {
+	var res = map[uint16]*ItemStat{}
+	q.dcConnections.Range(func(key, value interface{}) bool {
+		var id uint16 = *(key.(*uint16))
+		v := value.(*dcQueue)
+		res[id] = &ItemStat{
+			ID:       v.dc.ID(),
+			Label:    v.dc.Label(),
+			Buffered: v.dc.BufferedAmount(),
+			State:    v.dc.ReadyState().String(),
+			Tasks:    len(v.tasks),
+		}
+		return true
+	})
+	return res
 }
 
 func (d *dcQueue) addTask(buffer *bufferTask) {

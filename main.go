@@ -113,8 +113,11 @@ func status(w http.ResponseWriter, r *http.Request) {
 }
 
 func peers(w http.ResponseWriter, r *http.Request) {
-	var stat = manager.Stats()
-	util.JSONPut(w, stat)
+	if r.URL.Query().Get("t") == "video" {
+		util.JSONPut(w, manager.StatsVideo())
+		return
+	}
+	util.JSONPut(w, manager.Stats())
 }
 
 func webrtcLoop(id string, addr string) {
