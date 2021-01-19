@@ -164,11 +164,19 @@ func (d *dcQueue) quit(id string, index uint64) {
 }
 
 func (d *dcQueue) doTask(task *bufferTask) error {
-	bs, err := httpProvider.Get(task.target)
-	if err != nil {
-		return err
+	var buffers [][]byte
+	select {
+	case <-task.ctx.Done():
+		return nil
+	case <-d.ctx.Done():
+		return nil
+	default:
+		bs, err := httpProvider.Get(task.target)
+		if err != nil {
+			return err
+		}
+		buffers = splitBuffer(bs)
 	}
-	var buffers = splitBuffer(bs)
 	select {
 	case <-task.ctx.Done():
 		return nil
