@@ -94,7 +94,9 @@ func (l *LockGeter) clean() {
 		var v = value.(*cacheItem)
 		if now.Sub(v.time) > l.cache {
 			v.cancel()
-			bufferPool.Put(v.data)
+			if v.data != nil {
+				bufferPool.Put(v.data)
+			}
 			l.caches.Delete(key)
 		}
 		return true
@@ -124,5 +126,9 @@ func Get(url string) (*bytes.Buffer, error) {
 	buffer.Reset()
 	_, err = io.CopyBuffer(buffer, resp.Body, buf)
 	bytePool.Put(buf)
-	return buffer, err
+	if err != nil {
+		bufferPool.Put(buffer)
+		return nil, err
+	}
+	return buffer, nil
 }

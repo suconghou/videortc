@@ -16,7 +16,7 @@ const chunk = 51200
 
 var (
 	queueManager = newdcQueueManager()
-	httpProvider = request.NewLockGeter(time.Hour)
+	httpProvider = request.NewLockGeter(time.Minute * 20)
 )
 
 type dcQueueManager struct {
