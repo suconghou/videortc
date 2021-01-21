@@ -438,6 +438,10 @@ func isPeerOk(peer *Peer) bool {
 		if dstatus == webrtc.DataChannelStateClosed || dstatus == webrtc.DataChannelStateClosing {
 			return false
 		}
+		var g = peer.conn.ICEGatheringState()
+		if dstatus == webrtc.DataChannelStateConnecting && cstatus == webrtc.PeerConnectionStateNew && i == webrtc.ICEConnectionStateNew && g == webrtc.ICEGatheringStateComplete {
+			return false
+		}
 	}
 	return true
 }
