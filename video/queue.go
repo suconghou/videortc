@@ -233,7 +233,7 @@ func (d *dcQueue) loopTask() {
 				n = 1
 			}
 			time.Sleep(time.Second * time.Duration(n))
-			if d.dc.ReadyState() == webrtc.DataChannelStateClosed || d.dc.ReadyState() == webrtc.DataChannelStateClosing {
+			if d.dc.ReadyState() != webrtc.DataChannelStateOpen {
 				return
 			}
 			task = d.getTask()
