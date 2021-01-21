@@ -44,15 +44,19 @@ type PeerManager struct {
 
 // DataChannelStatus for datachannel
 type DataChannelStatus struct {
-	ID    string
-	Label string
-	State string
+	ID       string
+	Label    string
+	State    string
+	Buffered uint64
 }
 
 // ConnState for conn status
 type ConnState struct {
-	DataChannelStatus    *DataChannelStatus
-	PeerConnectionStatus webrtc.StatsReport
+	ConnectionState    string
+	ICEConnectionState string
+	ICEGatheringState  string
+	DataChannelStatus  *DataChannelStatus
+	PeerStatus         webrtc.StatsReport
 }
 
 // PeerManagerStats for stats
@@ -172,14 +176,18 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 		var dstatus *DataChannelStatus
 		if peer.dc != nil {
 			dstatus = &DataChannelStatus{
-				ID:    fmt.Sprintf("%d", peer.dc.ID()),
-				Label: peer.dc.Label(),
-				State: peer.dc.ReadyState().String(),
+				ID:       fmt.Sprintf("%d", peer.dc.ID()),
+				Label:    peer.dc.Label(),
+				State:    peer.dc.ReadyState().String(),
+				Buffered: peer.dc.BufferedAmount(),
 			}
 		}
 		peers[id] = &ConnState{
-			DataChannelStatus:    dstatus,
-			PeerConnectionStatus: peer.conn.GetStats(),
+			ConnectionState:    peer.conn.ConnectionState().String(),
+			ICEConnectionState: peer.conn.ICEConnectionState().String(),
+			ICEGatheringState:  peer.conn.ICEGatheringState().String(),
+			DataChannelStatus:  dstatus,
+			PeerStatus:         peer.conn.GetStats(),
 		}
 	}
 	m.lock.RUnlock()
@@ -419,6 +427,10 @@ func initDc(d *webrtc.DataChannel) {
 func isPeerOk(peer *Peer) bool {
 	var cstatus = peer.conn.ConnectionState()
 	if cstatus == webrtc.PeerConnectionStateDisconnected || cstatus == webrtc.PeerConnectionStateClosed || cstatus == webrtc.PeerConnectionStateFailed {
+		return false
+	}
+	var i = peer.conn.ICEConnectionState()
+	if i == webrtc.ICEConnectionStateDisconnected || i == webrtc.ICEConnectionStateFailed || i == webrtc.ICEConnectionStateClosed {
 		return false
 	}
 	if peer.dc != nil {
