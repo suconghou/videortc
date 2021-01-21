@@ -67,13 +67,8 @@ func itemValid(item *youtubevideoparser.StreamItem) bool {
 
 // Ok test if this resource ok
 func (m *MediaHub) Ok(id string) bool {
-	item := m.getItemInfo(id)
-	return itemValid(item)
-}
-
-func (m *MediaHub) getItemInfo(id string) *youtubevideoparser.StreamItem {
 	_, item := m.getVideoInfo(id)
-	return item
+	return itemValid(item)
 }
 
 func (m *MediaHub) getVideoInfo(id string) (*youtubevideoparser.VideoInfo, *youtubevideoparser.StreamItem) {
