@@ -3,6 +3,7 @@ package rtc
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"videortc/util"
 	"videortc/video"
@@ -30,6 +31,7 @@ var (
 
 // Peer mean rtc peer
 type Peer struct {
+	time time.Time
 	ws   *ws.Peer
 	conn *webrtc.PeerConnection
 	dc   *webrtc.DataChannel
@@ -52,6 +54,7 @@ type DataChannelStatus struct {
 
 // ConnState for conn status
 type ConnState struct {
+	Time               time.Time
 	ConnectionState    string
 	ICEConnectionState string
 	ICEGatheringState  string
@@ -93,6 +96,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 		if isPeerOk(peer) {
 			return peer, false, nil
 		}
+		peer.Close()
 	}
 	peer, err = newPeer(m.ws)
 	if err != nil {
@@ -183,6 +187,7 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 			}
 		}
 		peers[id] = &ConnState{
+			Time:               peer.time,
 			ConnectionState:    peer.conn.ConnectionState().String(),
 			ICEConnectionState: peer.conn.ICEConnectionState().String(),
 			ICEGatheringState:  peer.conn.ICEGatheringState().String(),
@@ -209,6 +214,7 @@ func newPeer(sharedWs *ws.Peer) (*Peer, error) {
 		return nil, err
 	}
 	var peer = &Peer{
+		time.Now(),
 		sharedWs,
 		peerConnection,
 		nil,
@@ -439,7 +445,8 @@ func isPeerOk(peer *Peer) bool {
 			return false
 		}
 		var g = peer.conn.ICEGatheringState()
-		if dstatus == webrtc.DataChannelStateConnecting && cstatus == webrtc.PeerConnectionStateNew && i == webrtc.ICEConnectionStateNew && g == webrtc.ICEGatheringStateComplete {
+		var connecting = dstatus == webrtc.DataChannelStateConnecting && cstatus == webrtc.PeerConnectionStateNew && i == webrtc.ICEConnectionStateNew && g == webrtc.ICEGatheringStateComplete
+		if connecting && time.Now().Sub(peer.time) > time.Minute {
 			return false
 		}
 	}
