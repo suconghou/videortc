@@ -44,18 +44,20 @@ func main() {
 
 func serve(host string, port int) error {
 	var id = os.Getenv("ID")
-	if len(id) != 36 {
-		return fmt.Errorf("error id format")
-	}
 	var addr = os.Getenv("WS_ADDR")
-	if addr == "" {
-		return fmt.Errorf("error ws addr")
+	if addr != "" || id != "" {
+		if len(id) != 36 {
+			return fmt.Errorf("error id format")
+		}
+		if addr == "" {
+			return fmt.Errorf("error ws addr")
+		}
+		go webrtcLoop(id, addr)
+		http.HandleFunc("/peers", peers)
 	}
 	http.HandleFunc("/", routeMatch)
 	http.HandleFunc("/status", status)
-	http.HandleFunc("/peers", peers)
 	util.Log.Printf("Starting up on port %d", port)
-	go webrtcLoop(id, addr)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 }
 

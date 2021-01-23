@@ -76,6 +76,8 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 **工作模式**
 
+需配置`ID`和`WS_ADDR`使用webrtc功能,否则仅作为`videoproxy`server
+
 如果开启`BASE_URL`,则会使用指定的服务解析服务,本节点可在国内部署.
 
 否则,要国内部署,需使用`VIDEO_PROXY`配置代理
@@ -89,7 +91,7 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 接口`/status`查看运行状态
 
-接口`/peers`查看p2p网络节点和缓存状态
+接口`/peers`查看p2p网络节点和链接状态, `/peers?t=video` 查看媒体缓存和队列信息
 
 
 
