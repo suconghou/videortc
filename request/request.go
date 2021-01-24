@@ -36,7 +36,7 @@ func cacheSet(key string, val map[int][2]uint64) {
 	var now = time.Now()
 	infoMapCache.Range(func(key, value interface{}) bool {
 		var item = value.(*infoItem)
-		if now.Sub(item.time) < time.Hour {
+		if now.Sub(item.time) > time.Hour {
 			infoMapCache.Delete(key)
 		}
 		return true
@@ -76,7 +76,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	if err != nil {
 		return nil, err
 	}
-	bs, err := httpProvider.Get(getData(vid, item.Itag, start, end, item))
+	bs, err := httpProvider.Get(getData(vid, item.Itag, start, end+1, item))
 	if err != nil {
 		return nil, err
 	}
