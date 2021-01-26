@@ -97,6 +97,6 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 ## 子项目
 
-* github.com/suconghou/videoproxy
-* github.com/suconghou/mediaindex
-* github.com/suconghou/youtubevideoparser
+* https://github.com/suconghou/videoproxy
+* https://github.com/suconghou/mediaindex
+* https://github.com/suconghou/youtubevideoparser
