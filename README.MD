@@ -4,11 +4,11 @@ like http://github.com/suconghou/videoproxy but works as a cdn cache node which 
 
 ### 工作流程
 
-系统启动后与信令服务器(https://github.com/suconghou/signalserver)建立连接
+系统启动后与信令服务器( https://github.com/suconghou/signalserver )建立连接
 
 建立连接成功收到`init`事件
 
-如有其它在线用户,则`init`事件将会返回,其它已在线用户会收到此用户`online`事件
+如有其它在线用户,则`init`事件会携带已在线用户,其它已在线用户会收到此用户`online`事件
 
 已在线用户会主动链接新`online`的用户,本端等待链接
 
@@ -76,7 +76,7 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 **工作模式**
 
-需配置`ID`和`WS_ADDR`使用webrtc功能,否则仅作为`videoproxy`server
+需配置`ID`和`WS_ADDR`使用webrtc功能,否则退化为`videoproxy`(本项目构建于videoproxy之上)
 
 如果开启`BASE_URL`,则会使用指定的服务解析服务,本节点可在国内部署.
 
@@ -95,3 +95,8 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 
 
+## 子项目
+
+* github.com/suconghou/videoproxy
+* github.com/suconghou/mediaindex
+* github.com/suconghou/youtubevideoparser
