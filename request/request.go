@@ -16,7 +16,7 @@ import (
 
 var (
 	infoMapCache sync.Map
-	httpProvider = NewLockGeter(time.Hour)
+	httpProvider = NewLockGeter(time.Minute)
 )
 
 type infoItem struct {
