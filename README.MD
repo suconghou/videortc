@@ -73,6 +73,9 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 >
 > BASE_URL 媒体解析服务器, 例如 "https://video.feds.club/video" 需要支持url range
 >
+> UPSTREAM 作为负载均衡器,反向代理其他服务, 例如 "https://video.feds.club" 多个可用;号隔开
+>
+> 负载策略为随机算法,当第一次回源出错时,会选择其他源再试一次,若没有其他源,也会再试一次
 
 **工作模式**
 
@@ -81,6 +84,12 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 如果开启`BASE_URL`,则会使用指定的服务解析服务,本节点可在国内部署.
 
 否则,要国内部署,需使用`VIDEO_PROXY`配置代理
+
+> 如果境外服务器,无任何环境变量即等同于`videoproxy`;配置`ID`和`WS_ADDR`可开启其rtc功能
+>
+> 如果在境内,需要配置`VIDEO_PROXY`使用代理,同`videoproxy`的代理配置;借助于此代理,配置`ID`和`WS_ADDR`可开启其rtc功能
+>
+> 如果没有代理,`BASE_URL`配合`ID`和`WS_ADDR`可在境内开启rtc功能;媒体解析接口因境内又没配置代理,将不可用,可配置`UPSTREAM`将接口负载均衡到其他服务上
 
 
 ## 缓存

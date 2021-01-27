@@ -38,14 +38,14 @@ func (b *bytesBuffer) Put(data []byte) {
 	b.pool.Put(data)
 }
 
-// Handle return http request handler
+// Handle proxy http request
 func Handle(w http.ResponseWriter, r *http.Request) {
 	var origin = r.URL
 	curr, next := getUpstream()
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		util.Log.Printf("%s : %s", r.URL.String(), err)
 		modify := func(res *http.Response) error {
-			res.Header.Del("Cookie")
+			res.Header.Del("Set-Cookie")
 			return nil
 		}
 		serve(getDirector(next, origin), modify, nil, w, r)
@@ -63,7 +63,7 @@ func serve(director func(*http.Request), modifyResponse func(*http.Response) err
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
+				Timeout:   10 * time.Second,
 				KeepAlive: 30 * time.Second,
 				DualStack: true,
 			}).DialContext,
@@ -93,7 +93,7 @@ func modifyResponse(res *http.Response) error {
 	if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotModified) {
 		return fmt.Errorf("error status %s", res.Status)
 	}
-	res.Header.Del("Cookie")
+	res.Header.Del("Set-Cookie")
 	return nil
 }
 
