@@ -17,6 +17,7 @@ import (
 
 var (
 	videoClient = vutil.MakeClient("VIDEO_PROXY", time.Second*5)
+	baseURL     = os.Getenv("BASE_URL")
 )
 
 type videoItem struct {
@@ -129,7 +130,6 @@ func (m *MediaHub) clean() {
 }
 
 func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
-	var baseURL = os.Getenv("BASE_URL")
 	if baseURL != "" {
 		return request.GetInfoByUpstream(baseURL, id)
 	}

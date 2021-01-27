@@ -14,6 +14,8 @@ import (
 
 	"videortc/route"
 	"videortc/util"
+
+	"videortc/proxy"
 )
 
 var (
@@ -54,6 +56,9 @@ func serve(host string, port int) error {
 		}
 		go webrtcLoop(id, addr)
 		http.HandleFunc("/peers", peers)
+	}
+	if os.Getenv("UPSTREAM") != "" {
+		http.HandleFunc("/video/", proxy.Handle)
 	}
 	http.HandleFunc("/", routeMatch)
 	http.HandleFunc("/status", status)

@@ -17,6 +17,7 @@ import (
 var (
 	infoMapCache sync.Map
 	httpProvider = NewLockGeter(time.Minute)
+	baseURL      = os.Getenv("BASE_URL")
 )
 
 type infoItem struct {
@@ -98,7 +99,6 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 
 // getData do http request and got vid itag data
 func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) string {
-	var baseURL = os.Getenv("BASE_URL")
 	if baseURL != "" {
 		return getByUpstream(baseURL, vid, itag, start, end)
 	}
