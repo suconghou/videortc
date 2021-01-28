@@ -90,7 +90,8 @@ func getDirector(u *url.URL, origin *url.URL) func(*http.Request) {
 }
 
 func modifyResponse(res *http.Response) error {
-	if !(res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotModified) {
+	var s = res.StatusCode
+	if !(s >= http.StatusOK && s <= http.StatusNotModified) {
 		return fmt.Errorf("error status %s", res.Status)
 	}
 	res.Header.Del("Set-Cookie")
