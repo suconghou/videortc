@@ -16,7 +16,7 @@ const chunk = 51200
 
 var (
 	queueManager = newdcQueueManager()
-	httpProvider = request.NewLockGeter(time.Minute * 5)
+	httpProvider = request.NewLockGeter(time.Second * 5)
 )
 
 type dcQueueManager struct {
@@ -190,7 +190,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 			buffer []byte
 			start  = time.Now()
 		)
-		// 为保障buffers尽快去消费,我们限定在60s内使用(但是底层Send仍会引用此数据,实际可能大于此事件),超过这个时间作废
+		// 为保障buffers尽快去消费,我们限定在5s内使用(但是底层Send仍会引用此数据,实际可能大于此时间),超过这个时间作废
 		for i, buffer = range buffers {
 			select {
 			case <-task.ctx.Done():
@@ -212,7 +212,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 					time.Sleep(time.Millisecond * time.Duration(100*n))
 				}
 			}
-			if time.Now().Sub(start) > time.Minute {
+			if time.Now().Sub(start) > time.Second*5 {
 				return nil
 			}
 		}

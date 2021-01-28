@@ -16,7 +16,7 @@ import (
 
 var (
 	infoMapCache sync.Map
-	httpProvider = NewLockGeter(time.Minute)
+	httpProvider = NewLockGeter(time.Second * 5)
 	baseURL      = os.Getenv("BASE_URL")
 )
 

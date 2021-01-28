@@ -87,7 +87,7 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 
 func (l *LockGeter) clean() {
 	var now = time.Now()
-	if now.Sub(l.time) < time.Minute {
+	if now.Sub(l.time) < time.Second*5 {
 		return
 	}
 	l.caches.Range(func(key, value interface{}) bool {
