@@ -53,6 +53,7 @@ func (p *Peer) Loop(addr string) {
 		}
 	}()
 	go func() {
+		var timer = time.Tick(time.Minute)
 		var err error
 		for {
 			select {
@@ -69,7 +70,7 @@ func (p *Peer) Loop(addr string) {
 				if err != nil {
 					util.Log.Print(err)
 				}
-			case <-time.After(time.Minute):
+			case <-timer:
 				if err = p.conn.WriteControl(websocket.PingMessage, []byte(""), time.Now().Add(time.Second)); err != nil {
 					util.Log.Print(err)
 					p.conn.Close()
