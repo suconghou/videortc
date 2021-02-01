@@ -72,6 +72,7 @@ func (p *Peer) Loop(addr string) {
 			case <-time.After(time.Minute):
 				if err = p.conn.WriteControl(websocket.PingMessage, []byte(""), time.Now().Add(time.Second)); err != nil {
 					util.Log.Print(err)
+					p.conn.Close()
 				}
 			}
 		}
@@ -120,7 +121,6 @@ func (p *Peer) wsMsgLoop(addr string) error {
 		ev          string
 	)
 	for {
-		c.SetReadDeadline(time.Now().Add(time.Hour))
 		messageType, data, err = c.ReadMessage()
 		if err != nil {
 			break
