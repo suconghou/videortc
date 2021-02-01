@@ -37,7 +37,7 @@ type Peer struct {
 	initMsg      chan *InitEvent
 	onlineMsg    chan *OnlineEvent
 	userMsg      chan *MsgEvent
-	send         chan interface{}
+	send         chan map[string]interface{}
 }
 
 // Loop msg
@@ -45,7 +45,7 @@ func (p *Peer) Loop(addr string) {
 	p.initMsg = make(chan *InitEvent)
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
-	p.send = make(chan interface{})
+	p.send = make(chan map[string]interface{})
 	var wsMsgWorker = make(chan func())
 	go func() {
 		for fn := range wsMsgWorker {
@@ -97,7 +97,7 @@ func (p *Peer) Loop(addr string) {
 }
 
 // Send answer by ws connection
-func (p *Peer) Send(data interface{}) {
+func (p *Peer) Send(data map[string]interface{}) {
 	p.send <- data
 }
 
@@ -113,6 +113,9 @@ func (p *Peer) wsMsgLoop(addr string) error {
 	if err != nil {
 		return err
 	}
+	c.SetPongHandler(func(data string) error {
+		return c.SetReadDeadline(time.Now().Add(time.Hour))
+	})
 	p.conn = c
 	var (
 		messageType int
