@@ -9,13 +9,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-	"videortc/rtc"
-	"videortc/ws"
-
-	"videortc/route"
-	"videortc/util"
-
 	"videortc/proxy"
+	"videortc/route"
+	"videortc/rtc"
+	"videortc/util"
+	"videortc/ws"
 )
 
 var (
