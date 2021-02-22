@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"videortc/util"
 
 	"github.com/suconghou/mediaindex"
 
@@ -94,6 +95,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	if err != nil {
 		return nil, err
 	}
+	util.Log.Printf("ParseWebM %s:%s", vid, item.Itag)
 	return mediaindex.ParseWebM(bs, indexEndOffset, totalSize), nil
 }
 

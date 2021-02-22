@@ -60,6 +60,9 @@ func waitMsg() {
 				if !vHub.Ok(data.ID) {
 					return nil
 				}
+				if data.dc.ReadyState() != webrtc.DataChannelStateOpen {
+					return nil
+				}
 				var v = &foundEvent{
 					Event: "found",
 					Data: vinfo{
