@@ -84,7 +84,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 		return nil, err
 	}
 	if strings.Contains(item.Type, "mp4") {
-		return mediaindex.ParseMp4(bs), nil
+		return mediaindex.ParseMp4(bs)
 	}
 	var indexEndOffset uint64
 	var totalSize uint64
@@ -97,7 +97,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 		return nil, err
 	}
 	util.Log.Printf("ParseWebM %s %d %s:%s", indexURL, len(bs), vid, item.Itag)
-	return mediaindex.ParseWebM(bs, indexEndOffset, totalSize), nil
+	return mediaindex.ParseWebM(bs, indexEndOffset, totalSize)
 }
 
 // getData do http request and got vid itag data
