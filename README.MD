@@ -76,6 +76,8 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 > UPSTREAM 作为负载均衡器,反向代理其他服务, 例如 "https://video.feds.club" 多个可用;号隔开
 >
 > 负载策略为随机算法,当第一次回源出错时,会选择其他源再试一次,若没有其他源,也会再试一次
+>
+> 如需修改ICE Server需要在代码中修改
 
 **工作模式**
 
@@ -102,7 +104,9 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 接口`/peers`查看p2p网络节点和链接状态, `/peers?t=video` 查看媒体缓存和队列信息
 
+## docker
 
+`docker pull suconghou/videortc:latest`
 
 ## 子项目
 
