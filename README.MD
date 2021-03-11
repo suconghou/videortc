@@ -108,6 +108,19 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 
 `docker pull suconghou/videortc:latest`
 
+```bash
+docker run --rm \
+-it \
+--name videortc \
+-m 200m \
+-p 6060:6060 \
+-e ID="36位ID" \
+-e WS_ADDR="wss://ws.feds.club/uid/" \
+-e BASE_URL="https://video.feds.club/video" \
+suconghou/videortc:latest
+```
+
+
 ## 子项目
 
 * https://github.com/suconghou/videoproxy
