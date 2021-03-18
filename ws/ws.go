@@ -53,7 +53,7 @@ func (p *Peer) Loop(addr string) {
 		}
 	}()
 	go func() {
-		var timer = time.Tick(time.Minute)
+		var timer = time.NewTicker(time.Minute)
 		var err error
 		for {
 			select {
@@ -73,7 +73,7 @@ func (p *Peer) Loop(addr string) {
 				if err != nil {
 					util.Log.Print(err)
 				}
-			case <-timer:
+			case <-timer.C:
 				if p.conn == nil {
 					continue
 				}
