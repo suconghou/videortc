@@ -82,12 +82,12 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/suconghou/mediaindex v0.0.0-20210306075157-0ff7a775a421 h1:c4Fi2x8HtoSrrxxQETQwUijHiaLbmQRnUGbJRlnP5Y0=
 github.com/suconghou/mediaindex v0.0.0-20210306075157-0ff7a775a421/go.mod h1:0ycm1zy6IQk/PqTfykK/N1+R+qk6XU0j8oC1Oz2Rqfk=
-github.com/suconghou/videoproxy v0.0.0-20201109144010-c7e777dc9644 h1:mazTg+t2+Vbfd3iOEd+aF9gX0akQX6QG+MUNLXGvBrk=
-github.com/suconghou/videoproxy v0.0.0-20201109144010-c7e777dc9644/go.mod h1:FTvJ6T0yVqHt+cCS6IM9YloYfNCVGGK2iKR5HD4y64M=
+github.com/suconghou/videoproxy v0.0.0-20210328155940-9595d581d50d h1:opr9eWAgcXJ4BICX2sxgcjbZuVih5Y95EO8moqM2zE0=
+github.com/suconghou/videoproxy v0.0.0-20210328155940-9595d581d50d/go.mod h1:FTvJ6T0yVqHt+cCS6IM9YloYfNCVGGK2iKR5HD4y64M=
 github.com/suconghou/youtubevideoparser v0.0.0-20210328155928-b6780d703f5b h1:3NaAjIZbfs2Anzu0StqjRy4WqXXr8drGWuldeLoBn0s=
 github.com/suconghou/youtubevideoparser v0.0.0-20210328155928-b6780d703f5b/go.mod h1:N4MUhb9Rd73mBKRX4P40fIQctN6i1+EH57A5GwxqMoI=
-github.com/tidwall/gjson v1.7.3 h1:9dOulDrkCJf1mwljVMhXNQr9ZL2NvajRX7A1R8c6Qxw=
-github.com/tidwall/gjson v1.7.3/go.mod h1:5/xDoumyyDNerp2U36lyolv46b3uF/9Bu6OfyQ9GImk=
+github.com/tidwall/gjson v1.7.4 h1:19cchw8FOxkG5mdLRkGf9jqIqEyqdZhPqW60XfyFxk8=
+github.com/tidwall/gjson v1.7.4/go.mod h1:5/xDoumyyDNerp2U36lyolv46b3uF/9Bu6OfyQ9GImk=
 github.com/tidwall/match v1.0.3 h1:FQUVvBImDutD8wJLN6c5eMzWtjgONK9MwIBCOrUJKeE=
 github.com/tidwall/match v1.0.3/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
 github.com/tidwall/pretty v1.1.0 h1:K3hMW5epkdAVwibsQEfR/7Zj0Qgt4DxtNumTq/VloO8=
