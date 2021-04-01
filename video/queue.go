@@ -203,16 +203,15 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 				}
 				err = d.dc.Send(append(chunkHeader(task.id, task.index, i, l), buffer...))
 				if err != nil {
-					break
-				} else {
-					var n = d.dc.BufferedAmount() / maxBufferedAmount
-					if n < 1 {
-						n = 1
-					}
-					time.Sleep(time.Millisecond * time.Duration(100*n))
+					return err
 				}
+				var n = d.dc.BufferedAmount() / maxBufferedAmount
+				if n < 1 {
+					n = 1
+				}
+				time.Sleep(time.Millisecond * time.Duration(100*n))
 			}
-			if time.Now().Sub(start) > time.Second*5 {
+			if time.Since(start) > time.Second*5 {
 				return nil
 			}
 		}

@@ -446,7 +446,7 @@ func isPeerOk(peer *Peer) bool {
 		}
 		var g = peer.conn.ICEGatheringState()
 		var connecting = dstatus == webrtc.DataChannelStateConnecting && cstatus == webrtc.PeerConnectionStateNew && i == webrtc.ICEConnectionStateNew && g == webrtc.ICEGatheringStateComplete
-		if connecting && time.Now().Sub(peer.time) > time.Minute {
+		if connecting && time.Since(peer.time) > time.Minute {
 			return false
 		}
 	}
