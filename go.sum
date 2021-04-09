@@ -68,8 +68,8 @@ github.com/pion/turn/v2 v2.0.5/go.mod h1:APg43CFyt/14Uy7heYUOGWdkem/Wu4PhCO/bjyr
 github.com/pion/udp v0.1.0/go.mod h1:BPELIjbwE9PRbd/zxI/KYBnbo7B6+oA6YuEaNE8lths=
 github.com/pion/udp v0.1.1 h1:8UAPvyqmsxK8oOjloDk4wUt63TzFe9WEJkg5lChlj7o=
 github.com/pion/udp v0.1.1/go.mod h1:6AFo+CMdKQm7UiA0eUPA8/eVCTx8jBIITLZHc9DWX5M=
-github.com/pion/webrtc/v3 v3.0.20 h1:Jj0sk45MqQdkR24E1wbFRmOzb1Lv258ot9zd2fYB/Pw=
-github.com/pion/webrtc/v3 v3.0.20/go.mod h1:0eJnCpQrUMpRnvyonw4ZiWClToerpixrZ2KcoTxvX9M=
+github.com/pion/webrtc/v3 v3.0.21 h1:AbWcIdpMjk95qnVmWzgj561yfGm1LHSvJdfUvvuJdMM=
+github.com/pion/webrtc/v3 v3.0.21/go.mod h1:hYG8kKExnrs8KJHWE6ljDUD8v8zXdfIdOtnJzJXJsrg=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
