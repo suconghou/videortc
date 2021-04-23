@@ -441,7 +441,7 @@ func isPeerOk(peer *Peer) bool {
 	}
 	if peer.dc != nil {
 		var dstatus = peer.dc.ReadyState()
-		if dstatus == webrtc.DataChannelStateClosed || dstatus == webrtc.DataChannelStateClosing {
+		if badDc(dstatus) {
 			return false
 		}
 		var g = peer.conn.ICEGatheringState()
@@ -451,4 +451,8 @@ func isPeerOk(peer *Peer) bool {
 		}
 	}
 	return true
+}
+
+func badDc(dstatus webrtc.DataChannelState) bool {
+	return dstatus == webrtc.DataChannelStateClosed || dstatus == webrtc.DataChannelStateClosing
 }

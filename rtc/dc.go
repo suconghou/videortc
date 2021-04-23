@@ -124,12 +124,18 @@ func runIt(fn func() error) {
 }
 
 func sendPong(d *webrtc.DataChannel) error {
+	if badDc(d.ReadyState()) {
+		return nil
+	}
 	return d.SendText(`{"event":"pong"}`)
 }
 
 func sendPing(d *webrtc.DataChannel) error {
 	if d == nil {
 		return io.ErrClosedPipe
+	}
+	if badDc(d.ReadyState()) {
+		return nil
 	}
 	return d.SendText(`{"event":"ping"}`)
 }
@@ -138,6 +144,9 @@ func sendFound(d *webrtc.DataChannel, v *foundEvent) error {
 	bs, err := json.Marshal(v)
 	if err != nil {
 		return err
+	}
+	if badDc(d.ReadyState()) {
+		return nil
 	}
 	return d.SendText(string(bs))
 }
