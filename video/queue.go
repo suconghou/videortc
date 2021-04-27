@@ -112,14 +112,14 @@ func (d *dcQueue) addTask(buffer *bufferTask) {
 
 // get the first task from array
 func (d *dcQueue) getTask() *bufferTask {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	var l = len(d.tasks)
 	if l < 1 {
 		return nil
 	}
-	d.lock.Lock()
 	task := d.tasks[0]
 	d.tasks = d.tasks[1:]
-	d.lock.Unlock()
 	return task
 }
 

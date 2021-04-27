@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/gorilla/websocket v1.4.2
+	github.com/pion/ice/v2 v2.1.7 // indirect
 	github.com/pion/rtp v1.6.5 // indirect
 	github.com/pion/webrtc/v3 v3.0.26
 	github.com/suconghou/mediaindex v0.0.0-20210306075157-0ff7a775a421
