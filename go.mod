@@ -11,6 +11,6 @@ require (
 	github.com/suconghou/youtubevideoparser v0.0.0-20210328155928-b6780d703f5b
 	github.com/tidwall/gjson v1.7.5
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/net v0.0.0-20210427231257-85d9c07bbe3a // indirect
+	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781 // indirect
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 )
