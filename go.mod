@@ -10,7 +10,7 @@ require (
 	github.com/suconghou/videoproxy v0.0.0-20210426092953-f997a465bccf
 	github.com/suconghou/youtubevideoparser v0.0.0-20210328155928-b6780d703f5b
 	github.com/tidwall/gjson v1.7.5
-	golang.org/x/crypto v0.0.0-20210503195802-e9a32991a82e // indirect
-	golang.org/x/net v0.0.0-20210505024714-0287a6fb4125 // indirect
+	golang.org/x/crypto v0.0.0-20210505212654-3497b51f5e64 // indirect
+	golang.org/x/net v0.0.0-20210505214959-0714010a04ed // indirect
 	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6 // indirect
 )
