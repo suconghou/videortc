@@ -83,6 +83,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	if err != nil {
 		return nil, err
 	}
+	util.Log.Printf("Parse %s %d", indexURL, len(bs))
 	if strings.Contains(item.Type, "mp4") {
 		return mediaindex.ParseMp4(bs)
 	}
@@ -96,7 +97,6 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	if err != nil {
 		return nil, err
 	}
-	util.Log.Printf("ParseWebM %s %d", indexURL, len(bs))
 	return mediaindex.ParseWebM(bs, indexEndOffset, totalSize)
 }
 
