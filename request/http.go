@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -23,11 +22,6 @@ var (
 	bufferPool = sync.Pool{
 		New: func() interface{} {
 			return bytes.NewBuffer(make([]byte, 32*1024))
-		},
-	}
-	bytePool = sync.Pool{
-		New: func() interface{} {
-			return make([]byte, 32*1024)
 		},
 	}
 )
@@ -121,11 +115,9 @@ func Get(url string) (*bytes.Buffer, error) {
 	}
 	var (
 		buffer = bufferPool.Get().(*bytes.Buffer)
-		buf    = bytePool.Get().([]byte)
 	)
 	buffer.Reset()
-	_, err = io.CopyBuffer(buffer, resp.Body, buf)
-	bytePool.Put(buf)
+	_, err = buffer.ReadFrom(resp.Body)
 	if err != nil {
 		bufferPool.Put(buffer)
 		return nil, err
