@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/gorilla/websocket v1.4.2
+	github.com/pion/ice/v2 v2.1.8 // indirect
 	github.com/pion/webrtc/v3 v3.0.30
 	github.com/suconghou/mediaindex v0.0.0-20210524092415-56bdcf684be3
 	github.com/suconghou/videoproxy v0.0.0-20210607104820-b5d6a707aa66
