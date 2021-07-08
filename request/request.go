@@ -49,7 +49,7 @@ func cacheSet(key string, val map[int][2]uint64) {
 	})
 }
 
-// GetIndex with cache
+// GetIndex parseIndex with cache and return this segment download url
 func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) (string, error) {
 	var key = fmt.Sprintf("%s:%s", vid, item.Itag)
 	ranges := cacheGet(key)
@@ -100,7 +100,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	return mediaindex.ParseWebM(bs, indexEndOffset, totalSize)
 }
 
-// getData do http request and got vid itag data
+// getData return this range url
 func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) string {
 	if baseURL != "" {
 		return getByUpstream(baseURL, vid, itag, start, end)

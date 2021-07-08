@@ -46,6 +46,7 @@ func newdcQueueManager() *dcQueueManager {
 	}
 }
 
+// dcQueueManager 维护所有datachannel到dcConnections里,每个datachannel对应一个dcQueue
 func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t, loaded := q.dcConnections.LoadOrStore(fmt.Sprintf("%d", d.ID()), &dcQueue{
@@ -104,7 +105,20 @@ func (q *dcQueueManager) stats() map[string]*ItemStat {
 	return res
 }
 
+// 如果任务队列中已有此任务,则忽略;任务队列中有多个不同的id组,因为对等的datachannel可以同时查询多个视频
 func (d *dcQueue) addTask(buffer *bufferTask) {
+	var exist = false
+	d.lock.RLock()
+	for _, item := range d.tasks {
+		if buffer.id == item.id && buffer.index == item.index {
+			exist = true
+			buffer.cancel()
+		}
+	}
+	d.lock.RUnlock()
+	if exist {
+		return
+	}
 	d.lock.Lock()
 	d.tasks = append(d.tasks, buffer)
 	d.lock.Unlock()
