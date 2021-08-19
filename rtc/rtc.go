@@ -268,9 +268,6 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		return err
 	}
 
-	// Create channel that is blocked until ICE Gathering is complete
-	gatherComplete := webrtc.GatheringCompletePromise(p.conn)
-
 	// Sets the LocalDescription, and starts our UDP listeners
 	err = p.conn.SetLocalDescription(answer)
 	if err != nil {
@@ -285,11 +282,6 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		"data":  r,
 	}
 	p.ws.Send(data)
-
-	// Block until ICE Gathering is complete, disabling trickle ICE
-	// we do this because we only can exchange one signaling message
-	// in a production application you should exchange ICE Candidates via OnICECandidate
-	<-gatherComplete
 	return nil
 }
 
@@ -319,12 +311,10 @@ func (p *Peer) Connect(id string) error {
 			}
 			p.ws.Send(data)
 		})
-		gatherComplete := webrtc.GatheringCompletePromise(p.conn)
 		err = p.conn.SetLocalDescription(offer)
 		if err != nil {
 			return err
 		}
-		<-gatherComplete
 		return nil
 	}
 	p.conn.OnNegotiationNeeded(func() {
