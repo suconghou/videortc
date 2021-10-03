@@ -75,6 +75,8 @@ ID 为形式为`zznj1q6h-2hmf-1fmc-2ajh-20mx2hxk1r6r`的36个字符唯一ID
 >
 > UPSTREAM 作为负载均衡器,反向代理其他服务, 例如 "https://video.feds.club" 多个可用;号隔开
 >
+> PUBLICIP 可选配置,需要形式 `ip:port` 或者`ip`的形式,内部使用`SetNAT1To1IPs`和`SetICEUDPMux`优化穿透
+> 
 > 负载策略为随机算法,当第一次回源出错时,会选择其他源再试一次,若没有其他源,也会再试一次
 >
 > 如需修改ICE Server需要在代码中修改

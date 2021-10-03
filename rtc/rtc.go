@@ -2,6 +2,10 @@ package rtc
 
 import (
 	"fmt"
+	"net"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,6 +44,7 @@ type Peer struct {
 // PeerManager manage every user peer
 type PeerManager struct {
 	ws    *ws.Peer
+	api   *webrtc.API
 	peers map[string]*Peer
 	lock  *sync.RWMutex
 }
@@ -68,9 +73,43 @@ type PeerManagerStats struct {
 	Peers map[string]*ConnState
 }
 
+func getApi() *webrtc.API {
+	var (
+		publicIp      = os.Getenv("PUBLICIP")
+		arr           = strings.Split(publicIp, ":")
+		settingEngine = webrtc.SettingEngine{}
+	)
+	if publicIp == "" {
+		return webrtc.NewAPI()
+	}
+	if len(arr) == 2 {
+		var (
+			ip    = arr[0]
+			sport = arr[1]
+		)
+		port, err := strconv.Atoi(sport)
+		if err != nil {
+			panic(err)
+		}
+		udpListener, err := net.ListenUDP("udp", &net.UDPAddr{
+			IP:   net.IP{0, 0, 0, 0},
+			Port: port,
+		})
+		if err != nil {
+			panic(err)
+		}
+		settingEngine.SetNAT1To1IPs([]string{ip}, webrtc.ICECandidateTypeHost)
+		settingEngine.SetICEUDPMux(webrtc.NewICEUDPMux(nil, udpListener))
+		return webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+	}
+	settingEngine.SetNAT1To1IPs([]string{publicIp}, webrtc.ICECandidateTypeHost)
+	return webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+}
+
 // NewPeerManager do peer manage
 func NewPeerManager() *PeerManager {
 	return &PeerManager{
+		api:   getApi(),
 		peers: map[string]*Peer{},
 		lock:  &sync.RWMutex{},
 	}
@@ -98,7 +137,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 		}
 		peer.Close()
 	}
-	peer, err = newPeer(m.ws)
+	peer, err = m.newPeer()
 	if err != nil {
 		return nil, true, err
 	}
@@ -106,6 +145,35 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 	m.peers[id] = peer
 	m.lock.Unlock()
 	return peer, true, nil
+}
+
+// newPeer create Peer based on the api we created
+func (m *PeerManager) newPeer() (*Peer, error) {
+	peerConnection, err := m.api.NewPeerConnection(config)
+	if err != nil {
+		return nil, err
+	}
+	var peer = &Peer{
+		time.Now(),
+		m.ws,
+		peerConnection,
+		nil,
+	}
+	// Set the handler for ICE connection state
+	// This will notify you when the peer has connected/disconnected
+	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+		util.Log.Printf("ICE Connection State has changed: %s\n", connectionState.String())
+	})
+	// Register data channel creation handling
+	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+		if peer.dc != nil {
+			peer.dc.Close()
+		}
+		initDc(d)
+		peer.dc = d
+	})
+
+	return peer, nil
 }
 
 //get 创建新的Peer实例,如果有旧的则清理它
@@ -205,35 +273,6 @@ func (m *PeerManager) Stats() *PeerManagerStats {
 // StatsVideo for video cache info
 func (m *PeerManager) StatsVideo() *video.VStatus {
 	return vHub.Stats()
-}
-
-// newPeer create Peer
-func newPeer(sharedWs *ws.Peer) (*Peer, error) {
-	peerConnection, err := webrtc.NewPeerConnection(config)
-	if err != nil {
-		return nil, err
-	}
-	var peer = &Peer{
-		time.Now(),
-		sharedWs,
-		peerConnection,
-		nil,
-	}
-	// Set the handler for ICE connection state
-	// This will notify you when the peer has connected/disconnected
-	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		util.Log.Printf("ICE Connection State has changed: %s\n", connectionState.String())
-	})
-	// Register data channel creation handling
-	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
-		if peer.dc != nil {
-			peer.dc.Close()
-		}
-		initDc(d)
-		peer.dc = d
-	})
-
-	return peer, nil
 }
 
 // Accept for some peer send me offer to connect me
