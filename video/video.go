@@ -133,11 +133,7 @@ func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
 	if baseURL != "" {
 		return request.GetInfoByUpstream(baseURL, id)
 	}
-	parser, err := youtubevideoparser.NewParser(id, videoClient)
-	if err != nil {
-		return nil, err
-	}
-	return parser.Parse()
+	return youtubevideoparser.Parse(id, videoClient)
 }
 
 // Response create send task that send data to dc
