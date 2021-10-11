@@ -3,6 +3,7 @@ package request
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -24,6 +25,7 @@ var (
 			return bytes.NewBuffer(make([]byte, 32*1024))
 		},
 	}
+	errTimeout = errors.New("timeout")
 )
 
 // LockGeter for http cache & lock get
@@ -59,7 +61,7 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 		time:   now,
 		ctx:    ctx,
 		cancel: cancel,
-		err:    fmt.Errorf("timeout"),
+		err:    errTimeout,
 	})
 	v := t.(*cacheItem)
 	if loaded {
