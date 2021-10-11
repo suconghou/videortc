@@ -53,7 +53,7 @@ func NewLockGeter(cache time.Duration) *LockGeter {
 // Get with lock & cache,the return bytes is readonly
 func (l *LockGeter) Get(url string) ([]byte, error) {
 	var now = time.Now()
-	l.clean()
+	l.clean(now)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	t, loaded := l.caches.LoadOrStore(url, &cacheItem{
 		time:   now,
@@ -79,8 +79,7 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 	return data.Bytes(), err
 }
 
-func (l *LockGeter) clean() {
-	var now = time.Now()
+func (l *LockGeter) clean(now time.Time) {
 	if now.Sub(l.time) < time.Second*5 {
 		return
 	}
@@ -113,9 +112,7 @@ func Get(url string) (*bytes.Buffer, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s:%s", url, resp.Status)
 	}
-	var (
-		buffer = bufferPool.Get().(*bytes.Buffer)
-	)
+	var buffer = bufferPool.Get().(*bytes.Buffer)
 	buffer.Reset()
 	_, err = buffer.ReadFrom(resp.Body)
 	if err != nil {
