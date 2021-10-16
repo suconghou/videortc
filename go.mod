@@ -4,14 +4,14 @@ go 1.17
 
 require (
 	github.com/gorilla/websocket v1.4.2
-	github.com/pion/webrtc/v3 v3.1.2
+	github.com/pion/webrtc/v3 v3.1.5
 	github.com/suconghou/mediaindex v0.0.0-20210723142634-73696a6ddae7
 	github.com/suconghou/videoproxy v0.0.0-20211011085921-1f6402d1ce72
 	github.com/suconghou/youtubevideoparser v0.0.0-20211011155809-78e68aeb83e5
-	github.com/tidwall/gjson v1.9.3
+	github.com/tidwall/gjson v1.9.4
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0 // indirect
-	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 )
 
 require (
