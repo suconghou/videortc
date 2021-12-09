@@ -8,17 +8,17 @@ require (
 	github.com/suconghou/mediaindex v0.0.0-20210723142634-73696a6ddae7
 	github.com/suconghou/videoproxy v0.0.0-20211011085921-1f6402d1ce72
 	github.com/suconghou/youtubevideoparser v0.0.0-20211011155809-78e68aeb83e5
-	github.com/tidwall/gjson v1.12.0
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871 // indirect
-	golang.org/x/net v0.0.0-20211123203042-d83791d6bcd9 // indirect
-	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
+	github.com/tidwall/gjson v1.12.1
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // indirect
+	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
+	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
 )
 
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pion/datachannel v1.5.2 // indirect
-	github.com/pion/dtls/v2 v2.0.10 // indirect
+	github.com/pion/dtls/v2 v2.0.11 // indirect
 	github.com/pion/ice/v2 v2.1.14 // indirect
 	github.com/pion/interceptor v0.1.2 // indirect
 	github.com/pion/logging v0.2.2 // indirect
