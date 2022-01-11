@@ -10,8 +10,8 @@ require (
 	github.com/suconghou/youtubevideoparser v0.0.0-20211209095733-9e09d86ca032
 	github.com/tidwall/gjson v1.12.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d // indirect
+	golang.org/x/sys v0.0.0-20220110181412-a018aaa089fe // indirect
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/pion/datachannel v1.5.2 // indirect
 	github.com/pion/dtls/v2 v2.0.13 // indirect
 	github.com/pion/ice/v2 v2.1.18 // indirect
-	github.com/pion/interceptor v0.1.4 // indirect
+	github.com/pion/interceptor v0.1.5 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.5 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
