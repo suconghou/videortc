@@ -4,23 +4,23 @@ go 1.17
 
 require (
 	github.com/gorilla/websocket v1.4.2
-	github.com/pion/webrtc/v3 v3.1.13
+	github.com/pion/webrtc/v3 v3.1.17
 	github.com/suconghou/mediaindex v0.0.0-20210723142634-73696a6ddae7
 	github.com/suconghou/videoproxy v0.0.0-20211209095648-39e541fc0e0c
 	github.com/suconghou/youtubevideoparser v0.0.0-20211209095733-9e09d86ca032
-	github.com/tidwall/gjson v1.12.1
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d // indirect
-	golang.org/x/sys v0.0.0-20220110181412-a018aaa089fe // indirect
+	github.com/tidwall/gjson v1.13.0
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce // indirect
+	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d // indirect
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 )
 
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pion/datachannel v1.5.2 // indirect
-	github.com/pion/dtls/v2 v2.0.13 // indirect
+	github.com/pion/dtls/v2 v2.1.0 // indirect
 	github.com/pion/ice/v2 v2.1.18 // indirect
-	github.com/pion/interceptor v0.1.5 // indirect
+	github.com/pion/interceptor v0.1.6 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.5 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
