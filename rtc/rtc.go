@@ -36,14 +36,14 @@ var (
 // Peer mean rtc peer
 type Peer struct {
 	time time.Time
-	ws   *ws.Peer
+	ws   *ws.WsPeer
 	conn *webrtc.PeerConnection
 	dc   *webrtc.DataChannel
 }
 
 // PeerManager manage every user peer
 type PeerManager struct {
-	ws    *ws.Peer
+	ws    *ws.WsPeer
 	api   *webrtc.API
 	peers map[string]*Peer
 	lock  *sync.RWMutex
@@ -116,7 +116,7 @@ func NewPeerManager() *PeerManager {
 }
 
 // SetSignal 设置信令服务器
-func (m *PeerManager) SetSignal(ws *ws.Peer) {
+func (m *PeerManager) SetSignal(ws *ws.WsPeer) {
 	m.ws = ws
 }
 
@@ -417,9 +417,14 @@ func initDc(d *webrtc.DataChannel) {
 			g := gjson.ParseBytes(msg.Data)
 			ev := g.Get("event").String()
 			if ev == "query" {
+				var parts = []uint64{}
+				g.Get("data.parts").ForEach(func(key, value gjson.Result) bool {
+					parts = append(parts, value.Uint())
+					return true
+				})
 				dcQueryMsg <- &queryEvent{
-					vinfo: vinfo{
-						Index: g.Get("data.index").Uint(),
+					vinfos: vinfos{
+						Parts: parts,
 						ID:    g.Get("data.id").String(),
 					},
 					dc: d,
@@ -428,8 +433,8 @@ func initDc(d *webrtc.DataChannel) {
 			} else if ev == "resolve" {
 				dcResolveMsg <- &resolveEvent{
 					vinfo: vinfo{
-						Index: g.Get("data.index").Uint(),
-						ID:    g.Get("data.id").String(),
+						Part: g.Get("data.part").Uint(),
+						ID:   g.Get("data.id").String(),
 					},
 					dc: d,
 				}
@@ -443,8 +448,8 @@ func initDc(d *webrtc.DataChannel) {
 			} else if ev == "quit" {
 				dcQuitMsg <- &quitEvent{
 					vinfo: vinfo{
-						Index: g.Get("data.index").Uint(),
-						ID:    g.Get("data.id").String(),
+						Part: g.Get("data.part").Uint(),
+						ID:   g.Get("data.id").String(),
 					},
 					dc: d,
 				}

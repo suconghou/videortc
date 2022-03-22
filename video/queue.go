@@ -86,7 +86,7 @@ func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index uint64) {
 	if !ok {
 		return
 	}
-	v.(*dcQueue).quit(id, index)
+	v.(*dcQueue).rmTask(id, index)
 }
 
 func (q *dcQueueManager) stats() map[string]*ItemStat {
@@ -172,10 +172,6 @@ func (d *dcQueue) rmTask(id string, index uint64) {
 	d.tasks = d.tasks[:i]
 }
 
-func (d *dcQueue) quit(id string, index uint64) {
-	d.rmTask(id, index)
-}
-
 func (d *dcQueue) doTask(task *bufferTask) error {
 	var buffers [][]byte
 	select {
@@ -257,7 +253,6 @@ func (d *dcQueue) loopTask() {
 			if err = d.doTask(task); err != nil {
 				util.Log.Print(err)
 			}
-			task = nil
 		}
 	}
 }
@@ -274,7 +269,7 @@ func splitBuffer(bs []byte) [][]byte {
 	var (
 		buffers = [][]byte{}
 		start   = 0
-		end     = 0
+		end     int
 		l       = len(bs)
 		data    []byte
 	)

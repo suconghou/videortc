@@ -20,25 +20,36 @@ var (
 )
 
 type vinfo struct {
-	ID    string `json:"id"`
-	Index uint64 `json:"index"`
+	ID   string `json:"id"`
+	Part uint64 `json:"part"`
 }
 
-// 对方发来此类型
+type vinfos struct {
+	ID    string   `json:"id"`
+	Parts []uint64 `json:"parts"`
+}
+
+// 批量查询
 type queryEvent struct {
+	dc *webrtc.DataChannel
+	vinfos
+}
+
+// 收到此响应需要队列回复他二进制
+type resolveEvent struct {
 	dc *webrtc.DataChannel
 	vinfo
 }
 
-// 收到此响应需要队列回复他二进制
-type resolveEvent queryEvent
-
-type quitEvent queryEvent
+type quitEvent struct {
+	dc *webrtc.DataChannel
+	vinfo
+}
 
 // 给对方回复found
 type foundEvent struct {
 	Event string `json:"event"`
-	Data  vinfo  `json:"data"`
+	Data  vinfos `json:"data"`
 }
 
 // ping/pong 共用
@@ -65,8 +76,8 @@ func waitMsg() {
 				}
 				var v = &foundEvent{
 					Event: "found",
-					Data: vinfo{
-						Index: data.Index,
+					Data: vinfos{
+						Parts: data.Parts,
 						ID:    data.ID,
 					},
 				}
@@ -80,7 +91,7 @@ func waitMsg() {
 
 		case data := <-dcResolveMsg:
 			fn := func() error {
-				return vHub.Response(data.dc, data.ID, data.Index)
+				return vHub.Response(data.dc, data.ID, data.Part)
 			}
 			select {
 			case worker <- fn:
@@ -99,7 +110,7 @@ func waitMsg() {
 			}
 		case data := <-dcQuitMsg:
 			fn := func() error {
-				return vHub.QuitResponse(data.dc, data.ID, data.Index)
+				return vHub.QuitResponse(data.dc, data.ID, data.Part)
 			}
 			select {
 			case worker <- fn:

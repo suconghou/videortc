@@ -65,7 +65,7 @@ func GetIndex(vid string, item *youtubevideoparser.StreamItem, index int) (strin
 	if info[1] == 0 {
 		return "", fmt.Errorf("%s:%s error get %d index range", vid, item.Itag, index)
 	}
-	return getData(vid, item.Itag, int(info[0]), int(info[1]), item), nil
+	return getDataURL(vid, item.Itag, int(info[0]), int(info[1]), item), nil
 }
 
 // parse item media
@@ -78,7 +78,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 	if err != nil {
 		return nil, err
 	}
-	var indexURL = getData(vid, item.Itag, start, end+1, item)
+	var indexURL = getDataURL(vid, item.Itag, start, end+1, item)
 	bs, err := httpProvider.Get(indexURL)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 }
 
 // getData return this range url
-func getData(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) string {
+func getDataURL(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) string {
 	if baseURL != "" {
 		return getByUpstream(baseURL, vid, itag, start, end)
 	}

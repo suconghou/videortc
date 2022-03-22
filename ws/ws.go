@@ -27,8 +27,8 @@ type MsgEvent struct {
 	Data  gjson.Result
 }
 
-// Peer mean one ws conn
-type Peer struct {
+// WsPeer mean one ws conn
+type WsPeer struct {
 	ID           string
 	OnInit       func(msg *InitEvent)
 	OnUserOnline func(msg *OnlineEvent)
@@ -41,7 +41,7 @@ type Peer struct {
 }
 
 // Loop msg
-func (p *Peer) Loop(addr string) {
+func (p *WsPeer) Loop(addr string) {
 	p.initMsg = make(chan *InitEvent)
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
@@ -104,18 +104,18 @@ func (p *Peer) Loop(addr string) {
 }
 
 // Send answer by ws connection
-func (p *Peer) Send(data map[string]interface{}) {
+func (p *WsPeer) Send(data map[string]interface{}) {
 	p.send <- data
 }
 
-func (p *Peer) connLoop(addr string) {
+func (p *WsPeer) connLoop(addr string) {
 	for {
 		util.Log.Print(p.wsMsgLoop(addr))
 		time.Sleep(time.Second)
 	}
 }
 
-func (p *Peer) wsMsgLoop(addr string) error {
+func (p *WsPeer) wsMsgLoop(addr string) error {
 	c, _, err := websocket.DefaultDialer.Dial(addr+p.ID, nil)
 	if err != nil {
 		return err

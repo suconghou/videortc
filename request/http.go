@@ -85,6 +85,7 @@ func (l *LockGeter) clean(now time.Time) {
 	if now.Sub(l.time) < time.Second*5 {
 		return
 	}
+	l.time = now
 	l.caches.Range(func(key, value interface{}) bool {
 		var v = value.(*cacheItem)
 		if now.Sub(v.time) > l.cache {
@@ -97,7 +98,6 @@ func (l *LockGeter) clean(now time.Time) {
 		}
 		return true
 	})
-	l.time = now
 }
 
 // Get http data, the return value should be readonly

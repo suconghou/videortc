@@ -184,7 +184,7 @@ func webrtcLoop(id string, addr string) {
 			util.Log.Print(err)
 		}
 	}
-	signal := &ws.Peer{
+	signal := &ws.WsPeer{
 		ID:           id,
 		OnInit:       init,
 		OnUserOnline: online,
