@@ -103,16 +103,9 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 // getData return this range url
 func getDataURL(vid string, itag string, start int, end int, item *youtubevideoparser.StreamItem) string {
 	if baseURL != "" {
-		return getByUpstream(baseURL, vid, itag, start, end)
+		// by upstream
+		return fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
 	}
-	return getByOrigin(item, start, end)
-}
-
-func getByUpstream(baseURL string, vid string, itag string, start int, end int) string {
-	return fmt.Sprintf("%s/%s/%s/%d-%d.ts", baseURL, vid, itag, start, end-1)
-}
-
-func getByOrigin(item *youtubevideoparser.StreamItem, start int, end int) string {
 	return fmt.Sprintf("%s&range=%d-%d", item.URL, start, end-1)
 }
 

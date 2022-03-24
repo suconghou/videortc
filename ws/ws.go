@@ -46,31 +46,32 @@ func (p *WsPeer) Loop(addr string) {
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
 	p.send = make(chan map[string]interface{})
-	var wsMsgWorker = make(chan func())
+	// 读线程
 	go func() {
-		for fn := range wsMsgWorker {
-			fn()
+		for {
+			util.Log.Print(p.wsMsgLoop(addr))
+			time.Sleep(time.Second)
 		}
 	}()
+	// 写线程
 	go func() {
-		var timer = time.NewTicker(time.Minute)
-		var err error
+		var (
+			timer = time.NewTicker(time.Minute)
+			err   error
+		)
 		for {
 			select {
 			case data := <-p.send:
 				if p.conn == nil {
 					continue
 				}
-				err = p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3))
-				if err != nil {
+				if err = p.conn.SetWriteDeadline(time.Now().Add(time.Second * 3)); err != nil {
 					util.Log.Print(err)
 				}
-				err = p.conn.WriteJSON(data)
-				if err != nil {
+				if err = p.conn.WriteJSON(data); err != nil {
 					util.Log.Print(err)
 				}
-				err = p.conn.SetWriteDeadline(time.Now().Add(time.Hour))
-				if err != nil {
+				if err = p.conn.SetWriteDeadline(time.Now().Add(time.Hour)); err != nil {
 					util.Log.Print(err)
 				}
 			case <-timer.C:
@@ -84,21 +85,14 @@ func (p *WsPeer) Loop(addr string) {
 			}
 		}
 	}()
-	go p.connLoop(addr)
 	for {
 		select {
 		case data := <-p.initMsg:
-			wsMsgWorker <- func() {
-				p.OnInit(data)
-			}
+			p.OnInit(data)
 		case data := <-p.onlineMsg:
-			wsMsgWorker <- func() {
-				p.OnUserOnline(data)
-			}
+			p.OnUserOnline(data)
 		case data := <-p.userMsg:
-			wsMsgWorker <- func() {
-				p.OnUserMsg(data)
-			}
+			p.OnUserMsg(data)
 		}
 	}
 }
@@ -106,13 +100,6 @@ func (p *WsPeer) Loop(addr string) {
 // Send answer by ws connection
 func (p *WsPeer) Send(data map[string]interface{}) {
 	p.send <- data
-}
-
-func (p *WsPeer) connLoop(addr string) {
-	for {
-		util.Log.Print(p.wsMsgLoop(addr))
-		time.Sleep(time.Second)
-	}
 }
 
 func (p *WsPeer) wsMsgLoop(addr string) error {

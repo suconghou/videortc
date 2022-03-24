@@ -211,8 +211,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 				if d.dc.ReadyState() != webrtc.DataChannelStateOpen {
 					return nil
 				}
-				err = d.dc.Send(append(chunkHeader(task.id, task.index, i, l), buffer...))
-				if err != nil {
+				if err = d.dc.Send(append(chunkHeader(task.id, task.index, i, l), buffer...)); err != nil {
 					return err
 				}
 				var n = d.dc.BufferedAmount() / maxBufferedAmount
