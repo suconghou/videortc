@@ -416,25 +416,16 @@ func initDc(d *webrtc.DataChannel) {
 		if msg.IsString {
 			g := gjson.ParseBytes(msg.Data)
 			ev := g.Get("event").String()
-			if ev == "query" {
+			if ev == "resolve" {
 				var parts = []uint64{}
 				g.Get("data.parts").ForEach(func(key, value gjson.Result) bool {
 					parts = append(parts, value.Uint())
 					return true
 				})
-				dcQueryMsg <- &queryEvent{
+				dcResolveMsg <- &resolveEvent{
 					vinfos: vinfos{
 						Parts: parts,
 						ID:    g.Get("data.id").String(),
-					},
-					dc: d,
-				}
-				return
-			} else if ev == "resolve" {
-				dcResolveMsg <- &resolveEvent{
-					vinfo: vinfo{
-						Part: g.Get("data.part").Uint(),
-						ID:   g.Get("data.id").String(),
 					},
 					dc: d,
 				}
@@ -446,10 +437,15 @@ func initDc(d *webrtc.DataChannel) {
 				}
 				return
 			} else if ev == "quit" {
+				var parts = []uint64{}
+				g.Get("data.parts").ForEach(func(key, value gjson.Result) bool {
+					parts = append(parts, value.Uint())
+					return true
+				})
 				dcQuitMsg <- &quitEvent{
-					vinfo: vinfo{
-						Part: g.Get("data.part").Uint(),
-						ID:   g.Get("data.id").String(),
+					vinfos: vinfos{
+						Parts: parts,
+						ID:    g.Get("data.id").String(),
 					},
 					dc: d,
 				}

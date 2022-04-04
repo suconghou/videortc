@@ -137,31 +137,32 @@ func getInfo(id string) (*youtubevideoparser.VideoInfo, error) {
 }
 
 // Response create send task that send data to dc
-func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index uint64) error {
+func (m *MediaHub) Response(d *webrtc.DataChannel, id string, index []uint64) error {
 	vinfo, item := m.getVideoInfo(id)
 	if !itemValid(item) {
 		return nil
 	}
-	target, err := request.GetIndex(vinfo.ID, item, int(index))
-	if err != nil {
-		return err
+	for _, i := range index {
+		target, err := request.GetIndex(vinfo.ID, item, int(i))
+		if err != nil {
+			return err
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+		queueManager.send(d, &bufferTask{
+			id,
+			i,
+			target,
+			ctx,
+			cancel,
+		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	queueManager.send(d, &bufferTask{
-		id,
-		index,
-		target,
-		ctx,
-		cancel,
-	})
 	return nil
 }
 
 // QuitResponse cancel that send task
-func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index uint64) error {
+func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index []uint64) {
 	queueManager.quit(d, id, index)
 	m.clean()
-	return nil
 }
 
 // Stats output status

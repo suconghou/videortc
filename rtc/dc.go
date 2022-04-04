@@ -1,7 +1,6 @@
 package rtc
 
 import (
-	"encoding/json"
 	"io"
 	"time"
 	"videortc/util"
@@ -11,7 +10,6 @@ import (
 )
 
 var (
-	dcQueryMsg   = make(chan *queryEvent)
 	dcResolveMsg = make(chan *resolveEvent)
 	dcPingMsg    = make(chan *pingPongEvent)
 	dcQuitMsg    = make(chan *quitEvent)
@@ -19,37 +17,20 @@ var (
 	vHub         = video.NewMediaHub()
 )
 
-type vinfo struct {
-	ID   string `json:"id"`
-	Part uint64 `json:"part"`
-}
-
 type vinfos struct {
 	ID    string   `json:"id"`
 	Parts []uint64 `json:"parts"`
 }
 
-// 批量查询
-type queryEvent struct {
+// 收到此响应需要队列回复他二进制
+type resolveEvent struct {
 	dc *webrtc.DataChannel
 	vinfos
 }
 
-// 收到此响应需要队列回复他二进制
-type resolveEvent struct {
-	dc *webrtc.DataChannel
-	vinfo
-}
-
 type quitEvent struct {
 	dc *webrtc.DataChannel
-	vinfo
-}
-
-// 给对方回复found
-type foundEvent struct {
-	Event string `json:"event"`
-	Data  vinfos `json:"data"`
+	vinfos
 }
 
 // ping/pong 共用
@@ -66,32 +47,9 @@ func init() {
 func waitMsg() {
 	for {
 		select {
-		case data := <-dcQueryMsg:
-			fn := func() error {
-				if !vHub.Ok(data.ID) {
-					return nil
-				}
-				if data.dc.ReadyState() != webrtc.DataChannelStateOpen {
-					return nil
-				}
-				var v = &foundEvent{
-					Event: "found",
-					Data: vinfos{
-						Parts: data.Parts,
-						ID:    data.ID,
-					},
-				}
-				return sendFound(data.dc, v)
-			}
-			select {
-			case worker <- fn:
-			case <-time.After(time.Second):
-				go runIt(fn)
-			}
-
 		case data := <-dcResolveMsg:
 			fn := func() error {
-				return vHub.Response(data.dc, data.ID, data.Part)
+				return vHub.Response(data.dc, data.ID, data.Parts)
 			}
 			select {
 			case worker <- fn:
@@ -110,7 +68,8 @@ func waitMsg() {
 			}
 		case data := <-dcQuitMsg:
 			fn := func() error {
-				return vHub.QuitResponse(data.dc, data.ID, data.Part)
+				vHub.QuitResponse(data.dc, data.ID, data.Parts)
+				return nil
 			}
 			select {
 			case worker <- fn:
@@ -149,15 +108,4 @@ func sendPing(d *webrtc.DataChannel) error {
 		return nil
 	}
 	return d.SendText(`{"event":"ping"}`)
-}
-
-func sendFound(d *webrtc.DataChannel, v *foundEvent) error {
-	bs, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	if badDc(d.ReadyState()) {
-		return nil
-	}
-	return d.SendText(string(bs))
 }

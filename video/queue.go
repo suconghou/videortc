@@ -81,12 +81,15 @@ func (q *dcQueueManager) clean() {
 	})
 }
 
-func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index uint64) {
+func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index []uint64) {
 	v, ok := q.dcConnections.Load(fmt.Sprintf("%d", d.ID()))
 	if !ok {
 		return
 	}
-	v.(*dcQueue).rmTask(id, index)
+	dq := v.(*dcQueue)
+	for _, i := range index {
+		dq.rmTask(id, i)
+	}
 }
 
 func (q *dcQueueManager) stats() map[string]*ItemStat {
