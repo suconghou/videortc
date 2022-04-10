@@ -12,7 +12,7 @@ import (
 )
 
 const maxBufferedAmount uint64 = 1024 * 1024 // 1 MB
-const chunk = 51200
+const chunk = 1024 * 64
 
 var (
 	queueManager = newdcQueueManager()
@@ -259,12 +259,17 @@ func (d *dcQueue) loopTask() {
 	}
 }
 
-// 自定义分片协议,前端按照此协议组装,header头必须30字符
-// ["id",i,l]
-// id = vid:itag|index
+// 自定义分片协议,前端按照此协议组装
+// [id, sn, i, n]
+// 协议头|版本号|头部长度
+// 二进制协议
+// protocol 16位 0x7364
+// version x0a1
+
 func chunkHeader(id string, index uint64, i int, l int) []byte {
-	var header = fmt.Sprintf(`["%s|%d",%d,%d]`, id, index, i, l)
-	return []byte(fmt.Sprintf("%-30s", header))
+	var meta = fmt.Sprintf(`["%s",%d,%d,%d]`, id, index, i, l)
+	var head = []byte{0x73, 0x64, 0xa1, uint8(len(meta))}
+	return append(head, []byte(meta)...)
 }
 
 func splitBuffer(bs []byte) [][]byte {
