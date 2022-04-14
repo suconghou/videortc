@@ -141,12 +141,12 @@ func (d *dcQueue) getTask() *bufferTask {
 }
 
 func (d *dcQueue) rmTask(id string, index uint64) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	var l = len(d.tasks)
 	if l < 1 {
 		return
 	}
-	d.lock.Lock()
-	defer d.lock.Unlock()
 	if id == "" && index == 0 {
 		// cancel all task
 		for i, x := range d.tasks {
