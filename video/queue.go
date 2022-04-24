@@ -239,13 +239,12 @@ func (d *dcQueue) loopTask() {
 		case <-d.ctx.Done():
 			return
 		default:
-			var n = d.dc.BufferedAmount() / maxBufferedAmount
-			if n < 1 {
-				n = 1
-			}
-			time.Sleep(time.Second * time.Duration(n))
 			if d.dc.ReadyState() != webrtc.DataChannelStateOpen {
 				return
+			}
+			if d.dc.BufferedAmount() > maxBufferedAmount {
+				time.Sleep(time.Second)
+				continue
 			}
 			task = d.getTask()
 			if task == nil {
