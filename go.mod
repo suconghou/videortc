@@ -1,17 +1,17 @@
 module videortc
 
-go 1.17
+go 1.18
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/pion/webrtc/v3 v3.1.28
+	github.com/pion/webrtc/v3 v3.1.34
 	github.com/suconghou/mediaindex v0.0.0-20210723142634-73696a6ddae7
 	github.com/suconghou/videoproxy v0.0.0-20220221101139-414e3d152cd4
 	github.com/suconghou/youtubevideoparser v0.0.0-20220221101159-0046fe95d116
-	github.com/tidwall/gjson v1.14.0
+	github.com/tidwall/gjson v1.14.1
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/net v0.0.0-20220421235706-1d1ef9303861 // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 )
 
 require (
@@ -19,7 +19,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pion/datachannel v1.5.2 // indirect
 	github.com/pion/dtls/v2 v2.1.3 // indirect
-	github.com/pion/ice/v2 v2.2.3 // indirect
+	github.com/pion/ice/v2 v2.2.6 // indirect
 	github.com/pion/interceptor v0.1.10 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/mdns v0.0.5 // indirect
