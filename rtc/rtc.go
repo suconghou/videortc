@@ -30,7 +30,9 @@ var (
 			},
 		},
 	}
-	maxPacketLifeTime = uint16(2000)
+	maxPacketLifeTime = uint16(9000)
+	ordered           = false
+	options           = &webrtc.DataChannelInit{MaxPacketLifeTime: &maxPacketLifeTime, Ordered: &ordered}
 )
 
 // Peer mean rtc peer
@@ -159,11 +161,7 @@ func (m *PeerManager) newPeer() (*Peer, error) {
 		peerConnection,
 		nil,
 	}
-	// Set the handler for ICE connection state
-	// This will notify you when the peer has connected/disconnected
-	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		util.Log.Printf("ICE Connection State has changed: %s\n", connectionState.String())
-	})
+
 	// Register data channel creation handling
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		if peer.dc != nil {
@@ -362,7 +360,7 @@ func (p *Peer) Connect(id string) error {
 		}
 	})
 
-	dc, err := p.conn.CreateDataChannel("dc", &webrtc.DataChannelInit{MaxPacketLifeTime: &maxPacketLifeTime})
+	dc, err := p.conn.CreateDataChannel("dc", options)
 	if err != nil {
 		return err
 	}
@@ -397,18 +395,9 @@ func initDc(d *webrtc.DataChannel) {
 
 	// Register channel opening handling
 	d.OnOpen(func() {
-		util.Log.Printf("Data channel '%s'-'%d' open. \n", d.Label(), d.ID())
 		if err := sendPing(d); err != nil {
 			util.Log.Print(err)
 		}
-	})
-
-	d.OnClose(func() {
-		util.Log.Printf("Data channel '%s'-'%d' closed. \n", d.Label(), d.ID())
-	})
-
-	d.OnError(func(err error) {
-		util.Log.Printf("Data channel '%s'-'%d' error %s. \n", d.Label(), d.ID(), err)
 	})
 
 	// Register text message handling
@@ -437,14 +426,14 @@ func initDc(d *webrtc.DataChannel) {
 				}
 				return
 			} else if ev == "quit" {
-				var parts = []uint64{}
+				var ids = []uint64{}
 				g.Get("data.parts").ForEach(func(key, value gjson.Result) bool {
-					parts = append(parts, value.Uint())
+					ids = append(ids, value.Uint())
 					return true
 				})
 				dcQuitMsg <- &quitEvent{
 					vinfos: vinfos{
-						Parts: parts,
+						Parts: ids,
 						ID:    g.Get("data.id").String(),
 					},
 					dc: d,
