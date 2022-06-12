@@ -1,6 +1,8 @@
 package ws
 
 import (
+	"crypto/tls"
+	"net/http"
 	"time"
 
 	"videortc/util"
@@ -9,17 +11,17 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// InitEvent mean myself online , give me who is online
+// 我上线后，当前swarmIds中的用户返回给我，我等待他们的链接
 type InitEvent struct {
 	IDS []string
 }
 
-// OnlineEvent mean someone online
+// 当有用户上线，我需要链接他
 type OnlineEvent struct {
 	ID string
 }
 
-// MsgEvent mean candidate/offer/answer types messages
+// Event 可能的值：candidate/offer/answer ，用于webrtc信令传递
 type MsgEvent struct {
 	From  string
 	To    string
@@ -27,7 +29,7 @@ type MsgEvent struct {
 	Data  gjson.Result
 }
 
-// WsPeer mean one ws conn
+// WsPeer 代表一个ws链接
 type WsPeer struct {
 	ID           string
 	OnInit       func(msg *InitEvent)
@@ -39,6 +41,15 @@ type WsPeer struct {
 	userMsg      chan *MsgEvent
 	send         chan map[string]interface{}
 }
+
+var (
+	// defaultDialer is a dialer with all fields set to the default values.
+	defaultDialer = &websocket.Dialer{
+		Proxy:            http.ProxyFromEnvironment,
+		HandshakeTimeout: 45 * time.Second,
+		TLSClientConfig:  &tls.Config{InsecureSkipVerify: true},
+	}
+)
 
 // Loop msg
 func (p *WsPeer) Loop(addr string) {
@@ -103,7 +114,7 @@ func (p *WsPeer) Send(data map[string]interface{}) {
 }
 
 func (p *WsPeer) wsMsgLoop(addr string) error {
-	c, _, err := websocket.DefaultDialer.Dial(addr+p.ID, nil)
+	c, _, err := defaultDialer.Dial(addr+p.ID, nil)
 	if err != nil {
 		return err
 	}
