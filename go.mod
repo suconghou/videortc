@@ -4,14 +4,14 @@ go 1.18
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/pion/webrtc/v3 v3.1.40
+	github.com/pion/webrtc/v3 v3.1.42
 	github.com/suconghou/mediaindex v0.0.0-20210723142634-73696a6ddae7
 	github.com/suconghou/videoproxy v0.0.0-20220221101139-414e3d152cd4
 	github.com/suconghou/youtubevideoparser v0.0.0-20220221101159-0046fe95d116
 	github.com/tidwall/gjson v1.14.1
-	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/sys v0.0.0-20220519141025-dcacdad47464 // indirect
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
+	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
+	golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e // indirect
 )
 
 require (
@@ -28,9 +28,9 @@ require (
 	github.com/pion/rtp v1.7.13 // indirect
 	github.com/pion/sctp v1.8.2 // indirect
 	github.com/pion/sdp/v3 v3.0.5 // indirect
-	github.com/pion/srtp/v2 v2.0.8 // indirect
+	github.com/pion/srtp/v2 v2.0.10 // indirect
 	github.com/pion/stun v0.3.5 // indirect
-	github.com/pion/transport v0.13.0 // indirect
+	github.com/pion/transport v0.13.1 // indirect
 	github.com/pion/turn/v2 v2.0.8 // indirect
 	github.com/pion/udp v0.1.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect

@@ -11,11 +11,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// 我上线后，当前swarmIds中的用户返回给我，我等待他们的链接
-type InitEvent struct {
-	IDS []string
-}
-
 // 当有用户上线，我需要链接他
 type OnlineEvent struct {
 	ID string
@@ -32,11 +27,9 @@ type MsgEvent struct {
 // WsPeer 代表一个ws链接
 type WsPeer struct {
 	ID           string
-	OnInit       func(msg *InitEvent)
 	OnUserOnline func(msg *OnlineEvent)
 	OnUserMsg    func(msg *MsgEvent)
 	conn         *websocket.Conn
-	initMsg      chan *InitEvent
 	onlineMsg    chan *OnlineEvent
 	userMsg      chan *MsgEvent
 	send         chan map[string]interface{}
@@ -53,7 +46,6 @@ var (
 
 // Loop msg
 func (p *WsPeer) Loop(addr string) {
-	p.initMsg = make(chan *InitEvent)
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
 	p.send = make(chan map[string]interface{})
@@ -98,8 +90,6 @@ func (p *WsPeer) Loop(addr string) {
 	}()
 	for {
 		select {
-		case data := <-p.initMsg:
-			p.OnInit(data)
 		case data := <-p.onlineMsg:
 			p.OnUserOnline(data)
 		case data := <-p.userMsg:
@@ -143,15 +133,6 @@ func (p *WsPeer) wsMsgLoop(addr string) error {
 			if id != "" {
 				p.onlineMsg <- &OnlineEvent{id}
 			}
-		} else if ev == "init" {
-			var ids = []string{}
-			g.Get("ids").ForEach(func(key gjson.Result, value gjson.Result) bool {
-				if id := value.String(); id != "" {
-					ids = append(ids, id)
-				}
-				return true
-			})
-			p.initMsg <- &InitEvent{ids}
 		} else if ev != "" {
 			from := g.Get("from").String()
 			to := g.Get("to").String()

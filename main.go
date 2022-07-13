@@ -127,24 +127,6 @@ func peers(w http.ResponseWriter, r *http.Request) {
 
 func webrtcLoop(id string, addr string) {
 	manager = rtc.NewPeerManager()
-	var init = func(msg *ws.InitEvent) {
-		// 我上线后别人会主动链接我,我只需要预先为这些peer创建资源,等待MsgEvent发来的offer
-		for _, online := range msg.IDS {
-			if online == id {
-				continue
-			}
-			peer, created, err := manager.Ensure(online)
-			if err != nil {
-				util.Log.Print(err)
-				return
-			}
-			if !created {
-				if err := peer.Ping(); err != nil {
-					util.Log.Print(err)
-				}
-			}
-		}
-	}
 	var online = func(msg *ws.OnlineEvent) {
 		if id == msg.ID {
 			return
@@ -186,7 +168,6 @@ func webrtcLoop(id string, addr string) {
 	}
 	signal := &ws.WsPeer{
 		ID:           id,
-		OnInit:       init,
 		OnUserOnline: online,
 		OnUserMsg:    umsg,
 	}

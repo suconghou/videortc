@@ -243,8 +243,8 @@ func (d *dcQueue) loopTask() {
 			if d.dc.ReadyState() != webrtc.DataChannelStateOpen {
 				return
 			}
-			if d.dc.BufferedAmount() > maxBufferedAmount {
-				time.Sleep(time.Second)
+			time.Sleep(time.Second)
+			if d.dc.BufferedAmount() > 1024 {
 				continue
 			}
 			task = d.getTask()
