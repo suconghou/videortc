@@ -17,7 +17,6 @@ import (
 
 var (
 	infoMapCache sync.Map
-	httpProvider = NewLockGeter(time.Second * 5)
 	baseURL      = os.Getenv("BASE_URL")
 )
 
@@ -79,7 +78,7 @@ func parseIndex(vid string, item *youtubevideoparser.StreamItem) (map[int][2]uin
 		return nil, err
 	}
 	var indexURL = getDataURL(vid, item.Itag, start, end+1, item)
-	bs, err := httpProvider.Get(indexURL)
+	bs, err := HttpProvider.Get(indexURL, 5)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func getDataURL(vid string, itag string, start int, end int, item *youtubevideop
 // GetInfoByUpstream 媒体索引也用upstream
 func GetInfoByUpstream(baseURL string, vid string) (*youtubevideoparser.VideoInfo, error) {
 	var url = fmt.Sprintf("%s/%s.json", baseURL, vid)
-	bs, err := httpProvider.Get(url)
+	bs, err := HttpProvider.Get(url, 5)
 	if err != nil {
 		return nil, err
 	}

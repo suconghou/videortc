@@ -26,46 +26,49 @@ var (
 		},
 	}
 	errTimeout = errors.New("timeout")
+
+	HttpProvider = NewLockGeter()
 )
 
 // LockGeter for http cache & lock get
 type LockGeter struct {
-	time   time.Time
-	cache  time.Duration
+	time   int64
 	caches sync.Map
 }
 
 type cacheItem struct {
-	time   time.Time
-	ctx    context.Context
-	cancel context.CancelFunc
-	data   *bytes.Buffer
-	err    error
+	time    int64
+	ctx     context.Context
+	cancel  context.CancelFunc
+	data    *bytes.Buffer
+	err     error
+	loading bool
 }
 
 // NewLockGeter create new lockgeter
-func NewLockGeter(cache time.Duration) *LockGeter {
+func NewLockGeter() *LockGeter {
 	return &LockGeter{
-		time:   time.Now(),
-		cache:  cache,
+		time:   0,
 		caches: sync.Map{},
 	}
 }
 
 // Get with lock & cache,the return bytes is readonly
-func (l *LockGeter) Get(url string) ([]byte, error) {
-	var now = time.Now()
+func (l *LockGeter) Get(url string, ttl int64) ([]byte, error) {
+	var now = time.Now().Unix()
 	l.clean(now)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	t, loaded := l.caches.LoadOrStore(url, &cacheItem{
-		time:   now,
-		ctx:    ctx,
-		cancel: cancel,
-		err:    errTimeout,
+		time:    now + ttl,
+		ctx:     ctx,
+		cancel:  cancel,
+		err:     errTimeout,
+		loading: true,
 	})
 	v := t.(*cacheItem)
 	if loaded {
 		<-v.ctx.Done()
+		v.loading = false
 		if v.data == nil {
 			return nil, v.err
 		}
@@ -74,6 +77,7 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 	data, err := Get(url)
 	v.data = data
 	v.err = err
+	v.loading = false
 	cancel()
 	if data == nil {
 		return nil, err
@@ -81,14 +85,14 @@ func (l *LockGeter) Get(url string) ([]byte, error) {
 	return data.Bytes(), err
 }
 
-func (l *LockGeter) clean(now time.Time) {
-	if now.Sub(l.time) < time.Second*5 {
+func (l *LockGeter) clean(now int64) {
+	if now-l.time < 5 {
 		return
 	}
 	l.time = now
 	l.caches.Range(func(key, value interface{}) bool {
 		var v = value.(*cacheItem)
-		if now.Sub(v.time) > l.cache {
+		if v.time < now && v.loading == false {
 			v.cancel()
 			if v.data != nil {
 				v.data.Reset()

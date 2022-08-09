@@ -16,7 +16,6 @@ const chunk = 1024 * 60
 
 var (
 	queueManager = newdcQueueManager()
-	httpProvider = request.NewLockGeter(time.Second * 5)
 )
 
 type dcQueueManager struct {
@@ -184,7 +183,7 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 		return nil
 	default:
 		// 因使用了缓存池,bs只读并且需尽快使用,等会过期将会被其他地方复用
-		bs, err := httpProvider.Get(task.target)
+		bs, err := request.HttpProvider.Get(task.target, 5)
 		if err != nil {
 			return err
 		}
