@@ -92,7 +92,7 @@ func (l *LockGeter) clean(now int64) {
 	l.time = now
 	l.caches.Range(func(key, value interface{}) bool {
 		var v = value.(*cacheItem)
-		if v.time < now && v.loading == false {
+		if v.time < now && !v.loading {
 			v.cancel()
 			if v.data != nil {
 				v.data.Reset()
