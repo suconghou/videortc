@@ -13,7 +13,7 @@ var (
 )
 
 // JSONPut resp json
-func JSONPut(w http.ResponseWriter, v interface{}) (int, error) {
+func JSONPut(w http.ResponseWriter, v any) (int, error) {
 	bs, err := json.Marshal(v)
 	if err != nil {
 		return 0, err

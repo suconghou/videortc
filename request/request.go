@@ -35,7 +35,7 @@ func cacheGet(key string) map[int][2]uint64 {
 
 func cacheSet(key string, val map[int][2]uint64) {
 	var now = time.Now()
-	infoMapCache.Range(func(key, value interface{}) bool {
+	infoMapCache.Range(func(key, value any) bool {
 		var item = value.(*infoItem)
 		if now.Sub(item.time) > time.Hour {
 			infoMapCache.Delete(key)

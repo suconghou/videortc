@@ -70,7 +70,7 @@ func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 
 // 检查中断的DataChannel,清理任务
 func (q *dcQueueManager) clean() {
-	q.dcConnections.Range(func(key, value interface{}) bool {
+	q.dcConnections.Range(func(key, value any) bool {
 		var item = value.(*dcQueue)
 		if item.dc.ReadyState() == webrtc.DataChannelStateClosed || item.dc.ReadyState() == webrtc.DataChannelStateClosing {
 			item.cancel()
@@ -93,7 +93,7 @@ func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index []uint64) 
 
 func (q *dcQueueManager) stats() map[string]*ItemStat {
 	var res = map[string]*ItemStat{}
-	q.dcConnections.Range(func(key, value interface{}) bool {
+	q.dcConnections.Range(func(key, value any) bool {
 		v := value.(*dcQueue)
 		res[key.(string)] = &ItemStat{
 			ID:       fmt.Sprintf("%d", v.dc.ID()),
@@ -279,10 +279,7 @@ func splitBuffer(bs []byte) [][]byte {
 		l       = len(bs)
 		data    []byte
 	)
-	for {
-		if start >= l {
-			break
-		}
+	for start < l {
 		end = start + chunk
 		if end > l {
 			end = l

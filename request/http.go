@@ -21,7 +21,7 @@ var (
 	}
 
 	bufferPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return bytes.NewBuffer(make([]byte, 32*1024))
 		},
 	}
@@ -90,7 +90,7 @@ func (l *LockGeter) clean(now int64) {
 		return
 	}
 	l.time = now
-	l.caches.Range(func(key, value interface{}) bool {
+	l.caches.Range(func(key, value any) bool {
 		var v = value.(*cacheItem)
 		if v.time < now && !v.loading {
 			v.cancel()

@@ -66,8 +66,9 @@ func serve(host string, port int) error {
 
 func routeMatch(w http.ResponseWriter, r *http.Request) {
 	for _, p := range route.Route {
-		if p.Reg.MatchString(r.URL.Path) {
-			if err := p.Handler(w, r, p.Reg.FindStringSubmatch(r.URL.Path)); err != nil {
+		matches := p.Reg.FindStringSubmatch(r.URL.Path)
+		if matches != nil {
+			if err := p.Handler(w, r, matches); err != nil {
 				util.Log.Print(r.URL.Path, " ", err)
 			}
 			return
@@ -114,15 +115,15 @@ func status(w http.ResponseWriter, r *http.Request) {
 	sysStatus.GoVersion = runtime.Version()
 	sysStatus.Hostname, _ = os.Hostname()
 	sysStatus.Pid = os.Getpid()
-	util.JSONPut(w, sysStatus)
+	_, _ = util.JSONPut(w, sysStatus)
 }
 
 func peers(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("t") == "video" {
-		util.JSONPut(w, manager.StatsVideo())
+		_, _ = util.JSONPut(w, manager.StatsVideo())
 		return
 	}
-	util.JSONPut(w, manager.Stats())
+	_, _ = util.JSONPut(w, manager.Stats())
 }
 
 func webrtcLoop(id string, addr string) {

@@ -118,7 +118,7 @@ func (m *MediaHub) clean() {
 	if now.Sub(m.time) < time.Minute {
 		return
 	}
-	m.videos.Range(func(key, value interface{}) bool {
+	m.videos.Range(func(key, value any) bool {
 		var v = value.(*videoItem)
 		if now.Sub(v.time) > time.Hour {
 			v.cancel()
@@ -168,7 +168,7 @@ func (m *MediaHub) QuitResponse(d *webrtc.DataChannel, id string, index []uint64
 // Stats output status
 func (m *MediaHub) Stats() *VStatus {
 	var res = map[string]*youtubevideoparser.VideoInfo{}
-	m.videos.Range(func(key, value interface{}) bool {
+	m.videos.Range(func(key, value any) bool {
 		v := value.(*videoItem)
 		res[key.(string)] = v.vinfo
 		return true

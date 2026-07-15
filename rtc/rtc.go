@@ -174,7 +174,7 @@ func (m *PeerManager) newPeer() (*Peer, error) {
 	return peer, nil
 }
 
-//get 创建新的Peer实例,如果有旧的则清理它
+// get 创建新的Peer实例,如果有旧的则清理它
 func (m *PeerManager) getPeer(id string) *Peer {
 	var (
 		peer *Peer
@@ -187,7 +187,8 @@ func (m *PeerManager) getPeer(id string) *Peer {
 
 // Dispatch message to peer ,此函数不能阻塞太久, Accept 可能耗时5s
 func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
-	if msg.Event == "offer" {
+	switch msg.Event {
+	case "offer":
 		// someone send me offer , we should accept that
 		peer, _, err := m.Ensure(msg.From)
 		if err != nil {
@@ -195,22 +196,24 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 		}
 		var sdp = msg.Data.Get("sdp").String()
 		return peer.Accept(webrtc.SDPTypeOffer, sdp, msg)
-	} else if msg.Event == "candidate" {
+	case "candidate":
 		peer := m.getPeer(msg.From)
 		if peer == nil {
 			return fmt.Errorf("not found peer %s", msg.From)
 		}
 		var (
-			sdpMid        = msg.Data.Get("sdpMid").String()
-			sdpMLineIndex = uint16(msg.Data.Get("sdpMLineIndex").Uint())
+			sdpMid           = msg.Data.Get("sdpMid").String()
+			sdpMLineIndex    = uint16(msg.Data.Get("sdpMLineIndex").Uint())
+			usernameFragment = msg.Data.Get("usernameFragment").String()
 		)
 		candidate := webrtc.ICECandidateInit{
-			Candidate:     msg.Data.Get("candidate").String(),
-			SDPMid:        &sdpMid,
-			SDPMLineIndex: &sdpMLineIndex,
+			Candidate:        msg.Data.Get("candidate").String(),
+			SDPMid:           &sdpMid,
+			SDPMLineIndex:    &sdpMLineIndex,
+			UsernameFragment: &usernameFragment,
 		}
 		return peer.conn.AddICECandidate(candidate)
-	} else if msg.Event == "answer" {
+	case "answer":
 		peer := m.getPeer(msg.From)
 		if peer == nil {
 			return fmt.Errorf("peer not found %s", msg.From)
@@ -220,7 +223,7 @@ func (m *PeerManager) Dispatch(msg *ws.MsgEvent) error {
 			SDP:  msg.Data.Get("sdp").String(),
 		}
 		return peer.conn.SetRemoteDescription(desc)
-	} else {
+	default:
 		util.Log.Print(msg)
 	}
 	return nil
@@ -279,7 +282,7 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 		if candidate == nil {
 			return
 		}
-		var data = map[string]interface{}{
+		var data = map[string]any{
 			"event": "candidate",
 			"from":  p.ws.ID,
 			"to":    msg.From,
@@ -312,7 +315,7 @@ func (p *Peer) Accept(sdpType webrtc.SDPType, sdp string, msg *ws.MsgEvent) erro
 	}
 
 	r := p.conn.LocalDescription()
-	var data = map[string]interface{}{
+	var data = map[string]any{
 		"event": "answer",
 		"from":  p.ws.ID,
 		"to":    msg.From,
@@ -329,7 +332,7 @@ func (p *Peer) Connect(id string) error {
 		if err != nil {
 			return err
 		}
-		var data = map[string]interface{}{
+		var data = map[string]any{
 			"event": "offer",
 			"from":  p.ws.ID,
 			"to":    id,
@@ -340,7 +343,7 @@ func (p *Peer) Connect(id string) error {
 			if candidate == nil {
 				return
 			}
-			var data = map[string]interface{}{
+			var data = map[string]any{
 				"event": "candidate",
 				"from":  p.ws.ID,
 				"to":    id,
@@ -405,7 +408,8 @@ func initDc(d *webrtc.DataChannel) {
 		if msg.IsString {
 			g := gjson.ParseBytes(msg.Data)
 			ev := g.Get("event").String()
-			if ev == "resolve" {
+			switch ev {
+			case "resolve":
 				var parts = []uint64{}
 				g.Get("data.parts").ForEach(func(key, value gjson.Result) bool {
 					parts = append(parts, value.Uint())
@@ -419,13 +423,13 @@ func initDc(d *webrtc.DataChannel) {
 					dc: d,
 				}
 				return
-			} else if ev == "ping" {
+			case "ping":
 				dcPingMsg <- &pingPongEvent{
 					Event: ev,
 					dc:    d,
 				}
 				return
-			} else if ev == "quit" {
+			case "quit":
 				var ids = []uint64{}
 				g.Get("data.parts").ForEach(func(key, value gjson.Result) bool {
 					ids = append(ids, value.Uint())
@@ -439,7 +443,7 @@ func initDc(d *webrtc.DataChannel) {
 					dc: d,
 				}
 				return
-			} else if ev == "pong" {
+			case "pong":
 				return
 			}
 		}

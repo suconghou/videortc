@@ -19,8 +19,9 @@ var (
 	upstreams     []*url.URL
 	upstreamCount int
 	bytePool      = &sync.Pool{
-		New: func() interface{} {
-			return make([]byte, 32*1024)
+		New: func() any {
+			buf := make([]byte, 32*1024)
+			return &buf
 		},
 	}
 	httpBufferPool = &bytesBuffer{bytePool}
@@ -31,11 +32,11 @@ type bytesBuffer struct {
 }
 
 func (b *bytesBuffer) Get() []byte {
-	return b.pool.Get().([]byte)
+	return *b.pool.Get().(*[]byte)
 }
 
 func (b *bytesBuffer) Put(data []byte) {
-	b.pool.Put(data)
+	b.pool.Put(&data)
 }
 
 // Handle proxy http request
@@ -91,7 +92,7 @@ func getDirector(u *url.URL, origin *url.URL) func(*http.Request) {
 
 func modifyResponse(res *http.Response) error {
 	var s = res.StatusCode
-	if !(s >= http.StatusOK && s <= http.StatusNotModified) {
+	if s < http.StatusOK || s > http.StatusNotModified {
 		return fmt.Errorf("error status %s", res.Status)
 	}
 	res.Header.Del("Set-Cookie")
@@ -113,7 +114,7 @@ func getUpstream() (*url.URL, *url.URL) {
 
 func initUpstream() ([]*url.URL, int) {
 	var urls = []*url.URL{}
-	for _, str := range strings.Split(os.Getenv("UPSTREAM"), ";") {
+	for str := range strings.SplitSeq(os.Getenv("UPSTREAM"), ";") {
 		if str != "" {
 			u, err := url.Parse(str)
 			if err != nil {

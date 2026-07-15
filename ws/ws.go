@@ -32,7 +32,7 @@ type WsPeer struct {
 	conn         *websocket.Conn
 	onlineMsg    chan *OnlineEvent
 	userMsg      chan *MsgEvent
-	send         chan map[string]interface{}
+	send         chan map[string]any
 }
 
 var (
@@ -48,7 +48,7 @@ var (
 func (p *WsPeer) Loop(addr string) {
 	p.onlineMsg = make(chan *OnlineEvent)
 	p.userMsg = make(chan *MsgEvent)
-	p.send = make(chan map[string]interface{})
+	p.send = make(chan map[string]any)
 	// 读线程
 	go func() {
 		for {
@@ -99,7 +99,7 @@ func (p *WsPeer) Loop(addr string) {
 }
 
 // Send answer by ws connection
-func (p *WsPeer) Send(data map[string]interface{}) {
+func (p *WsPeer) Send(data map[string]any) {
 	p.send <- data
 }
 
