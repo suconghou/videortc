@@ -9,7 +9,7 @@ import (
 	"videortc/request"
 	"videortc/util"
 
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 
 	vutil "github.com/suconghou/videoproxy/util"
 	"github.com/suconghou/youtubevideoparser"

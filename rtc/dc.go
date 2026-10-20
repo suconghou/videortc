@@ -6,7 +6,7 @@ import (
 	"videortc/util"
 	"videortc/video"
 
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 var (

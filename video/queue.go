@@ -8,7 +8,7 @@ import (
 	"videortc/request"
 	"videortc/util"
 
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 )
 
 const maxBufferedAmount uint64 = 1024 * 1024 // 1 MB

@@ -13,7 +13,7 @@ import (
 	"videortc/video"
 	"videortc/ws"
 
-	"github.com/pion/webrtc/v3"
+	"github.com/pion/webrtc/v4"
 	"github.com/tidwall/gjson"
 )
 
