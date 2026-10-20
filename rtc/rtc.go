@@ -137,7 +137,7 @@ func (m *PeerManager) Ensure(id string) (*Peer, bool, error) {
 		if isPeerOk(peer) {
 			return peer, false, nil
 		}
-		peer.Close()
+		_ = peer.Close()
 	}
 	peer, err = m.newPeer()
 	if err != nil {
@@ -165,7 +165,7 @@ func (m *PeerManager) newPeer() (*Peer, error) {
 	// Register data channel creation handling
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		if peer.dc != nil {
-			peer.dc.Close()
+			_ = peer.dc.Close()
 		}
 		initDc(d)
 		peer.dc = d
@@ -234,7 +234,7 @@ func (m *PeerManager) cleanPeers() {
 	m.lock.Lock()
 	for k, p := range m.peers {
 		if !isPeerOk(p) {
-			p.Close()
+			_ = p.Close()
 			delete(m.peers, k)
 		}
 	}
@@ -368,7 +368,7 @@ func (p *Peer) Connect(id string) error {
 		return err
 	}
 	if p.dc != nil {
-		p.dc.Close()
+		_ = p.dc.Close()
 	}
 	initDc(dc)
 	p.dc = dc

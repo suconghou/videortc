@@ -56,7 +56,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 func serve(director func(*http.Request), modifyResponse func(*http.Response) error, errorHandler func(http.ResponseWriter, *http.Request, error), w http.ResponseWriter, r *http.Request) {
 	proxy := &httputil.ReverseProxy{
-		Director:       director,
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			director(pr.Out)
+			pr.SetXForwarded()
+		},
 		FlushInterval:  time.Second,
 		BufferPool:     httpBufferPool,
 		ModifyResponse: modifyResponse,
@@ -66,7 +69,6 @@ func serve(director func(*http.Request), modifyResponse func(*http.Response) err
 			DialContext: (&net.Dialer{
 				Timeout:   10 * time.Second,
 				KeepAlive: 30 * time.Second,
-				DualStack: true,
 			}).DialContext,
 			ForceAttemptHTTP2:     true,
 			MaxIdleConns:          100,

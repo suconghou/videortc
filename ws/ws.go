@@ -83,7 +83,7 @@ func (p *WsPeer) Loop(addr string) {
 				}
 				if err = p.conn.WriteControl(websocket.PingMessage, []byte(""), time.Now().Add(time.Second)); err != nil {
 					util.Log.Print(err)
-					p.conn.Close()
+					_ = p.conn.Close()
 				}
 			}
 		}
@@ -148,6 +148,6 @@ func (p *WsPeer) wsMsgLoop(addr string) error {
 			util.Log.Print(string(data))
 		}
 	}
-	c.Close()
+	_ = c.Close()
 	return err
 }

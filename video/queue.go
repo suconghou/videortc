@@ -46,9 +46,11 @@ func newdcQueueManager() *dcQueueManager {
 }
 
 // dcQueueManager 维护所有datachannel到dcConnections里,每个datachannel对应一个dcQueue
+// 注意:DataChannel的ID(SCTP流号)只在单个PeerConnection内唯一,不同peer的channel可能都是0,
+// 因此以channel指针地址作为key,确保每个(peer,channel)有独立的队列
 func (q *dcQueueManager) send(d *webrtc.DataChannel, buffer *bufferTask) {
 	ctx, cancel := context.WithCancel(context.Background())
-	t, loaded := q.dcConnections.LoadOrStore(fmt.Sprintf("%d", d.ID()), &dcQueue{
+	t, loaded := q.dcConnections.LoadOrStore(fmt.Sprintf("%p", d), &dcQueue{
 		d,
 		[]*bufferTask{},
 		&sync.RWMutex{},
@@ -81,7 +83,7 @@ func (q *dcQueueManager) clean() {
 }
 
 func (q *dcQueueManager) quit(d *webrtc.DataChannel, id string, index []uint64) {
-	v, ok := q.dcConnections.Load(fmt.Sprintf("%d", d.ID()))
+	v, ok := q.dcConnections.Load(fmt.Sprintf("%p", d))
 	if !ok {
 		return
 	}
@@ -182,11 +184,11 @@ func (d *dcQueue) doTask(task *bufferTask) error {
 	case <-d.ctx.Done():
 		return nil
 	default:
-		// 因使用了缓存池,bs只读并且需尽快使用,等会过期将会被其他地方复用
 		bs, err := request.HttpProvider.Get(task.target, 5)
 		if err != nil {
 			return err
 		}
+		// 缓存返回的是独立的只读数据，可以直接切片
 		buffers = splitBuffer(bs)
 	}
 	select {

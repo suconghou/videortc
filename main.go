@@ -148,7 +148,7 @@ func webrtcLoop(id string, addr string) {
 		err = peer.Ping()
 		if err != nil {
 			// 我们上次已发现此用户(不是刚新建的),但是现在无法Ping,ws提示这个用户又上线了,可能之前的链接确实不行了,isPeerOk未能判断出来,此处销毁之前链接,再新建连接
-			peer.Close()
+			_ = peer.Close()
 			peer, _, err = manager.Ensure(msg.ID)
 			if err != nil {
 				util.Log.Print(err)
